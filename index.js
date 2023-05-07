@@ -22,10 +22,20 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
-io.on('connection', (socket) => {
-    socket.send ("hello, world!");
-    console.log('a user connected');
+io.on('connection', function (socket) {
+    //socket.send ("message", "message1");
+    //socket.emit ("message", "message2");
+    console.log('A user connected\r\n');
+
+    io.on('message', (message) => {
+        console.log('User message1: ' + message);
+    });
 });
+
+io.on('message', (message) => {
+    console.log('User message2: ' + message);
+});
+
 
 server.listen(3000, () => {
     console.log('listening on *:3000');
