@@ -1,4 +1,5 @@
 const dbListener = require ('./dbListener/dbListener');
+const dbTools = require ('./dbTools/dbTools');
 
 function helloWorld(string) {
     return string === "HelloWorld"
@@ -25,21 +26,26 @@ app.get('/', (req, res) => {
 io.on('connection', function (socket) {
     //socket.send ("message", "message1");
     //socket.emit ("message", "message2");
-    console.log('A user connected\r\n');
+    console.log('Client has connected');
 
-    io.on('message', (message) => {
-        console.log('User message1: ' + message);
+    socket.on('query', (q) => {
+        console.log('Query: ' + q);
     });
 });
 
-io.on('message', (message) => {
-    console.log('User message2: ' + message);
-});
-
-
-server.listen(3000, () => {
-    console.log('listening on *:3000');
-});
-
-// Start dblistener
 dbListener.initDBListener();
+
+
+// This block ensures proper initialization order
+(async () => {
+    await dbTools.InitDB();
+
+    // do not move out of this async block to ensure everything is initialized properly
+    server.listen(3000, () => {
+        console.log('listening on *:3000');
+    });    
+})()
+
+
+
+
