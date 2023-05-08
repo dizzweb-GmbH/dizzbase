@@ -1,5 +1,5 @@
 \c postgres;
-DROP DATABASE IF EXISTS test;
+DROP DATABASE IF EXISTS test WITH (FORCE);
 CREATE DATABASE test;
 \c test;
 
