@@ -23,7 +23,7 @@ function initDBListener ()
         }
     )
     
-    const plugin = new rep.PgoutputPlugin ({protoVersion: 1, publicationNames: ["pgoutput_test_pub"]});
+    const plugin = new rep.PgoutputPlugin ({protoVersion: 1, publicationNames: ["pgoutput_dizzbase_pub"]});
 
     service.on('data', (lsn, log) => {
         console.log (log);
@@ -40,7 +40,7 @@ function initDBListener ()
     });
 
     (function proc() {
-        service.subscribe(plugin, 'my_slot')
+        service.subscribe(plugin, 'dizzbase_slot')
         .catch((e) => {
             console.error(e);
         })

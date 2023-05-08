@@ -50,4 +50,6 @@ INSERT INTO "order" (order_name, customer_id, sales_rep_id, services_rep_id, ord
 INSERT INTO "order" (order_name, customer_id, sales_rep_id, services_rep_id, order_date, order_status, order_revenue)
     VALUES ('drinks', 1, 2, 3, '2023-04-01', 'open', 115.15);
 
-SELECT * FROM pg_create_logical_replication_slot('my_slot', 'pgoutput');
+
+CREATE PUBLICATION pgoutput_dizzbase_pub FOR ALL TABLES; -- CREATE PUBLICATION NEED TO BE BEFORE SLOT CREATION
+SELECT * FROM pg_create_logical_replication_slot('dizzbase_slot', 'pgoutput');
