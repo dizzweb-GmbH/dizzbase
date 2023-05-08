@@ -29,7 +29,6 @@ app.get('/', (req, res) => {
 io.on('connection', function (socket) {
     //socket.send ("message", "message1");
     //socket.emit ("message", "message2");
-    var connection;
     console.log('Client has connected');
 
     socket.on('query', (q) => {
