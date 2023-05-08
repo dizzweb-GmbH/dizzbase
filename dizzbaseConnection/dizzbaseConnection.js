@@ -1,12 +1,11 @@
+const dizzbaseQuery = require ('./dizzbaseQuery');
 
 class dizzbaseConnection
 {
-    sql = "SELECT ";
-    constructor (queryJSON)
+    constructor (queryJSONString)
     {
-        let tables = "";
-        let columns = "";
-
+        this.query = new dizzbaseQuery.dizzbaseQuery (queryJSONString);
     }
-
 }
+
+module.exports = { dizzbaseConnection };
