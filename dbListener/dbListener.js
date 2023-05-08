@@ -1,14 +1,15 @@
 const rep = require ('pg-logical-replication');
+require('dotenv').config();
 
 function initDBListener ()
 {
     const service = new rep.LogicalReplicationService(
         {
-            user: 'postgres',
-            database: 'test',
-            password: 'postgres',
-            port: 5432,
-            host: '127.0.0.1',
+            user: process.env.POSTGRES_USER,
+            database: process.env.POSTGRES_DB_NAME,
+            password: process.env.POSTGRES_PASSWORD,
+            port: process.env.POSTGRES_DB_PORT,
+            host: process.env.POSTGRES_DB_HOST,
         },
         /**
          * Logical replication service config
