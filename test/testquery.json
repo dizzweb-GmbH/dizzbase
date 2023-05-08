@@ -1,7 +1,7 @@
 {
   "table": {
     "name": "order",
-    "pkey": 0,
+    "pkey": 1,
     "columns": [],
     "alias": ""
   },
@@ -38,17 +38,28 @@
   ],
   "sortFields": [
     {
-      "column": "id",
+      "column": "order_id",
       "table": "order",
       "ascending": false
+    },
+    {
+      "column": "employee_name",
+      "table": "seller",
+      "ascending": true
     }
   ],
   "filters": [
     {
       "table": "order",
-      "column": "revenue",
+      "column": "order_revenue",
       "value": 100,
       "comparison": ">="
+    },
+    {
+      "table": "seller",
+      "column": "employee_name",
+      "value": "ralph",
+      "comparison": "="
     }
   ]
 }

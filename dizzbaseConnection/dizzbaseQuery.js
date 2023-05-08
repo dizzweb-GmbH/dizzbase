@@ -1,4 +1,5 @@
 const { getPrimaryKey, getForeignKey } = require("../dbTools/dbDictionary");
+const dbTools = require ('../dbTools/dbTools');
 
 class dizzbaseQuery
 {
@@ -22,9 +23,14 @@ class dizzbaseQuery
         return colsStr;
     }
 
+    async runQuery() {
+        res = await dbTools.getConnectionPool().query(sql);        
+    }
+
     constructor (queryJSONString)
     {
         this.alias = {};
+        this.sql = "";
         let cols = "";
         let where = " WHERE ";
         let orderBy = " ORDER BY ";
@@ -37,6 +43,11 @@ class dizzbaseQuery
         this.alias[_alias] = j["table"]["name"];
         let table = '"'+j["table"]["name"]+'"' + " AS " + '"'+_alias+'"';
         cols = this.getColumns (_alias, j["table"]["columns"]);
+
+        // This is the short-cut call for loading just one record via primary key:
+        if (j["table"]["pkey"] != 0)
+            where += '("'+_alias+'"' + '.' + '"'+getPrimaryKey(j["table"]["name"])+'"' + "=" + "'" + j["table"]["pkey"] +"'" + ") AND ";        
+
 
         /* Joined Tables */
         j["joinedTables"].forEach (jt => {
@@ -55,22 +66,30 @@ class dizzbaseQuery
                 " ON " + '"'+_alias+'"' + "." + '"'+getPrimaryKey(jt["name"])+'"' + "=" + '"'+joinToTableOrAlias+'"' + "." + '"'+foreignKey+'"' + " ";
         });
 
-        /* Filter/WHERE CLAUSE  */
+        /* Creat WHERE CLAUSE  */
         j["filters"].forEach (f => {            
-            where += '"'+f["table"]+'"' + '.' + '"'+f["column"]+'"' + f["comparison"] + " " + f["value"] + " ";
+            where += '("'+f["table"]+'"' + '.' + '"'+f["column"]+'"' + f["comparison"] + " " + "'" + f["value"] +"'" + ") AND ";
         });
 
-        /* Filter/WHERE CLAUSE  */
+        /* Create ORDER BY CLAUSE  */
         j["sortFields"].forEach (o => {            
             orderBy += '"'+o["table"]+'"' + '.' + '"'+o["column"]+'"' + " ";
             if (o["ascending"] == true)
                 orderBy += "ASC ";
             else
                 orderBy += "DESC ";
+            orderBy += ", "
         });
-
-        let select = "SELECT  " + cols + table + where + orderBy;
+    
+        this.sql = "SELECT " + cols.substring(0, cols.length-2) + // remove trailing ", "
+            " FROM " + table + where.substring(0, where.length-4)  // remove trailing "AND "
+            + orderBy.substring(0, orderBy.length-2); // remove trailing ", "
         console.log ("Query: ");
+
+        (async () => {
+            res = await dbTools.getConnectionPool().query(this.sql);
+            console.log (res);
+        })()
     }
 }
 
