@@ -1,5 +1,6 @@
 const dbDictionary = require ('./dbDictionary');
 const { Pool } = require('pg')
+require('dotenv').config();
 
 let pool;
 

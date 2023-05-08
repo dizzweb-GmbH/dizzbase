@@ -1,0 +1,54 @@
+{
+  "table": {
+    "name": "order",
+    "pkey": 0,
+    "columns": [],
+    "alias": ""
+  },
+  "joinedTables": [
+    {
+      "name": "customer",
+      "columns": [],
+      "alias": "",
+      "joinToTableOrAlias": "",
+      "foreignKey": "",
+      "joinType": "inner"
+    },
+    {
+      "name": "employee",
+      "columns": [
+        "employee_name",
+        "employee_email"
+      ],
+      "alias": "seller",
+      "joinToTableOrAlias": "order",
+      "foreignKey": "sales_rep_id",
+      "joinType": "inner"
+    },
+    {
+      "name": "employee",
+      "columns": [
+        "employee_name"
+      ],
+      "alias": "consultant",
+      "joinToTableOrAlias": "order",
+      "foreignKey": "services_rep_id",
+      "joinType": "inner"
+    }
+  ],
+  "sortFields": [
+    {
+      "column": "id",
+      "table": "order",
+      "ascending": false
+    }
+  ],
+  "filters": [
+    {
+      "table": "order",
+      "column": "revenue",
+      "value": 100,
+      "comparison": ">="
+    }
+  ]
+}
