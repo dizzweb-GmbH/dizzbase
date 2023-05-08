@@ -21,4 +21,8 @@ async function InitDB (params) {
     //await pool.end()        
 }
 
-module.exports = { InitDB };
+function getConnectionPool () {
+    return pool;
+}
+
+module.exports = { InitDB, getConnectionPool };
