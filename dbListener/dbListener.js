@@ -33,11 +33,15 @@ function initDBListener ()
         try
         {
             if(log["tag"] == "delete" | "insert" | "update"){
-                var temp = []
-                temp.push(log["relation"]["name"])
                 var pkName = dbTools.getPrimaryKey(log["relation"]["name"])
-                temp.push(log["key"][pkName])
-                primekeys.push(temp)
+
+                var data = {
+                    action: log["tag"],
+                    table: log["relation"]["name"],
+                    key: log["key"][pkName]
+                }
+
+                primekeys.push(data)
                 //console.log(primekeys)
                 
                 PubSub.publish('db_change', primekeys);
