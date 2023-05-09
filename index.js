@@ -56,6 +56,7 @@ var token = PubSub.subscribe('db_change', mySubscriber);
     await dbTools.InitDB();
 
     test.runTestQuery();
+    dbListener.initDBListener();
     
     // do not move out of this async block to ensure everything is initialized properly
     server.listen(3000, () => {
