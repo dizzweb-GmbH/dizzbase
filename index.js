@@ -2,6 +2,7 @@ const dbListener = require ('./dbListener/dbListener');
 const dbTools = require ('./dbTools/dbTools');
 const dizzbaseConnection = require ('./dizzbaseConnection/dizzbaseConnection');
 const test = require ('./test/testquery');
+const PubSub = require('pubsub-js');
 
 function helloWorld(string) {
     return string === "HelloWorld"
@@ -37,7 +38,12 @@ io.on('connection', function (socket) {
     });
 });
 
-dbListener.initDBListener();
+// create a function to subscribe to topics
+var mySubscriber = function (msg, data) {
+    console.log( msg, data );
+};
+
+var token = PubSub.subscribe('db_change', mySubscriber);
 
 
 // This block ensures proper initialization order
@@ -45,6 +51,7 @@ dbListener.initDBListener();
     await dbTools.InitDB();
 
     test.runTestQuery();
+    dbListener.initDBListener();
     
     // do not move out of this async block to ensure everything is initialized properly
     server.listen(3000, () => {

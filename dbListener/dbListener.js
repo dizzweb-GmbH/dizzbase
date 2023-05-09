@@ -1,5 +1,7 @@
 const rep = require ('pg-logical-replication');
+const PubSub = require('pubsub-js');
 require('dotenv').config();
+const dbTools = require('../dbTools/dbDictionary')
 
 function initDBListener ()
 {
@@ -26,17 +28,26 @@ function initDBListener ()
     const plugin = new rep.PgoutputPlugin ({protoVersion: 1, publicationNames: ["pgoutput_dizzbase_pub"]});
 
     service.on('data', (lsn, log) => {
-        console.log (log);
-        /*
+        //console.log (log);
+        var primekeys = [];
         try
         {
-            gSock.send (JSON.stringify(log.change))
+            if(log["tag"] == "delete" | "insert" | "update"){
+                var temp = []
+                temp.push(log["relation"]["name"])
+                var pkName = dbTools.getPrimaryKey(log["relation"]["name"])
+                temp.push(log["key"][pkName])
+                primekeys.push(temp)
+                //console.log(primekeys)
+                
+                PubSub.publish('db_change', primekeys);
+            }
+            //gSock.send (JSON.stringify(log.change))
         } catch (error) {
             console.log (error);
         }
         // Do something what you want.
-        // log.change.filter((change) => change.kind === 'insert').length;
-        */
+        // log.change.filter((change) => change.kind === 'insert').length;S
     });
 
     (function proc() {
