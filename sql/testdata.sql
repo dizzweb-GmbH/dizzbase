@@ -32,8 +32,10 @@ CREATE TABLE "order" (
 
 INSERT INTO employee (employee_name, employee_email) VALUES ('ralph', 'ralph@superstore.com');
 INSERT INTO employee (employee_name, employee_email) VALUES ('leo', 'leo@superstore.com');
+INSERT INTO employee (employee_name, employee_email) VALUES ('steffi', 'steffi@hotmail.com');
 INSERT INTO employee (employee_name, employee_email) VALUES ('lorenz', 'lorenz@superstore.com');
 INSERT INTO employee (employee_name, employee_email) VALUES ('joni', 'joni@superstore.com');
+INSERT INTO employee (employee_name, employee_email) VALUES ('gretchen', 'gretchen@hotmail.com');
 
 INSERT INTO customer (first_name, last_name, email) VALUES ('Tim', 'Tester', 'tim@hostmail.com');
 INSERT INTO customer (first_name, last_name, email) VALUES ('John', 'Doe', 'john@live.com');

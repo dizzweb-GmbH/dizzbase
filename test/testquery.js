@@ -1,5 +1,5 @@
 const fs = require('fs');
-const dizzbaseConnection = require ('../dizzbaseConnection/dizzbaseConnection');
+const dizzbaseConnection = require ('../dizzbaseServer/dizzbaseConnection');
 
 function runTestQuery() {
     testJSON = fs.readFileSync ('./test/testquery.json', 'ascii');
