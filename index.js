@@ -31,7 +31,6 @@ app.get('/', (req, res) => {
 io.on('connection', function (socket) {
     console.log('Client has connected');
     var uuidList = [];
-    var random = Math.floor(Math.random() * 1000);;
 
     socket.on('init', (_uuid) => {
         uuidList.push (_uuid, socket);
@@ -51,7 +50,7 @@ io.on('connection', function (socket) {
     socket.on('disconnect', async (reason) => {
         dizzbaseConnection.closeConnections (uuidList);
         uuidList = [];
-        console.log ("Client ("+random.toString()+") disconnect - "+reason);
+        console.log ("Client disconnect - "+reason);
     });
 });
 

@@ -111,7 +111,7 @@ class dizzbaseQuery
         });
     }
 
-    constructor (j /*queryJSONString*/)
+    constructor (j)
     {
         this.aliasToName = {};
         this.mainTable = "";
@@ -144,6 +144,7 @@ class dizzbaseQuery
             });
         }
     
+        // To Do: Migrate to SQL Parameter Binding: https://node-postgres.com/features/queries
         this.sql = "SELECT " + this.cols +
             this.pkeyCols.substring (0, this.pkeyCols.length-2) + // remove trailing ", "
             " FROM " + this.from + this.where.substring(0, this.where.length-4)  // remove trailing "AND "
