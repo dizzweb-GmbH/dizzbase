@@ -3,6 +3,7 @@ Realtime postgreSQL tool for node js.´
 
 # Notifier 
 https://www.npmjs.com/package/pubsub-js
+npm install pubsub-js
 
 # Todo
     1. Install dotenv package 
@@ -30,5 +31,6 @@ https://www.npmjs.com/package/pubsub-js
       
         JSON Plug für Postgres installieren:
         sudo apt-get install postgresql-14-wal2json
+
 
 
