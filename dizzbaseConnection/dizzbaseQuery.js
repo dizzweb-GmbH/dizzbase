@@ -123,8 +123,6 @@ class dizzbaseQuery
         this.orderBy = " ORDER BY ";
         this.pkeyTable = {};
     
-        //let j = JSON.parse (queryJSONString);
-
         this.processMainTable (j["table"]);
         this.processJoinedTables (j["joinedTables"]);
 

@@ -30,15 +30,27 @@ app.get('/', (req, res) => {
 
 io.on('connection', function (socket) {
     console.log('Client has connected');
-    var connection;
+    var uuidList = [];
     var random = Math.floor(Math.random() * 1000);;
 
-    socket.on('query', async (q) => {
-        connection = new dizzbaseConnection.dizzbaseConnection(q);
-        res = await connection.runQuery();
-        socket.emit ('data', res);
+    socket.on('init', (_uuid) => {
+        uuidList.push (_uuid, socket);
+        dizzbaseConnection.initConnection (_uuid, socket);
     });
+
+    socket.on('close', (_uuid) => {
+        let _temp_uuidList = [];
+        _temp_uuidList.push (_uuid);
+        dizzbaseConnection.closeConnections (_temp_uuidList);
+    });
+
+    socket.on('dbrequest', (req) => {
+        dizzbaseConnection.dbRequestEvent (req, socket);
+    });
+
     socket.on('disconnect', async (reason) => {
+        dizzbaseConnection.closeConnections (uuidList);
+        uuidList = [];
         console.log ("Client ("+random.toString()+") disconnect - "+reason);
     });
 });
@@ -55,7 +67,7 @@ var token = PubSub.subscribe('db_change', mySubscriber);
 (async () => {
     await dbTools.InitDB();
 
-    test.runTestQuery();
+    //test.runTestQuery();
     dbListener.initDBListener();
     
     // do not move out of this async block to ensure everything is initialized properly
