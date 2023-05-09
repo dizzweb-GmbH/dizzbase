@@ -1,7 +1,7 @@
 {
   "table": {
     "name": "order",
-    "pkey": 1,
+    "pkey": 0,
     "columns": [],
     "alias": ""
   },
@@ -54,12 +54,6 @@
       "column": "order_revenue",
       "value": 100,
       "comparison": ">="
-    },
-    {
-      "table": "seller",
-      "column": "employee_name",
-      "value": "ralph",
-      "comparison": "="
     }
   ]
 }

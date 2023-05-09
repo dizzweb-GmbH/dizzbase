@@ -41,6 +41,7 @@ function initDBListener ()
 
     (function proc() {
         service.subscribe(plugin, 'dizzbase_slot')
+        
         .catch((e) => {
             console.error(e);
         })

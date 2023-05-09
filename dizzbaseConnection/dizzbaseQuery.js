@@ -1,95 +1,155 @@
 const { getPrimaryKey, getForeignKey } = require("../dbTools/dbDictionary");
 const dbTools = require ('../dbTools/dbTools');
 
+const dizzPkeyPrefix = "dizz_pkey_";
+
 class dizzbaseQuery
 {
-    getAlias (tablename, alias) {
+    resolveAlias (tablename, alias) {
         if (alias == undefined) return tablename;
         if (alias == "") return tablename;
         return alias;        
     }
 
-    getColumns (table, cols)
+    getColumns (aliasOrName, cols, alias)
     {
-        let colsStr = '"'+table+'"'+"."+"*, ";
+        let colsStr = '"'+aliasOrName+'"'+"."+"*, ";
         if (cols == undefined)
             return colsStr;
         if (cols.length == 0)
             return colsStr;
         colsStr = "";
         cols.forEach(c => {
-            colsStr = colsStr + '"'+table+'"' + "." + '"'+c+'"' + ", ";
+            colsStr = colsStr + '"'+aliasOrName+'"' + "." + '"'+c+'"';
+            if (alias != "")
+                colsStr += " AS " + alias + "_" + c;            
+            colsStr += ", ";
         });
         return colsStr;
     }
 
     async runQuery() {
-        res = await dbTools.getConnectionPool().query(sql);        
+        res = await dbTools.getConnectionPool().query(this.sql);
+        this.buildPkeyTable (res.rows);
+
+        return res.rows;
     }
 
-    constructor (queryJSONString)
+    processMainTable (mainTableJSON)
     {
-        this.alias = {};
-        this.sql = "";
-        let cols = "";
-        let where = " WHERE ";
-        let orderBy = " ORDER BY ";
-    
-        let j = JSON.parse (queryJSONString);
-
-        /* Main Table */
-        let _alias = this.getAlias (j["table"]["name"], j["table"]["alias"]);
-        let _mainTable = _alias;
-        this.alias[_alias] = j["table"]["name"];
-        let table = '"'+j["table"]["name"]+'"' + " AS " + '"'+_alias+'"';
-        cols = this.getColumns (_alias, j["table"]["columns"]);
+        let _aliasOrName = this.resolveAlias (mainTableJSON["name"], mainTableJSON["alias"]);
+        this.mainTable = _aliasOrName;
+        this.aliasToName[_aliasOrName] = mainTableJSON["name"];
+        this.from = '"'+mainTableJSON["name"]+'"' + " AS " + '"'+_aliasOrName+'"';
+        this.cols = this.getColumns (_aliasOrName, mainTableJSON["columns"], mainTableJSON["alias"]);
+        this.pkeyCols = '"'+_aliasOrName+'"."' + getPrimaryKey(mainTableJSON["name"]) + '" AS ' + dizzPkeyPrefix + mainTableJSON["name"] + ", ";
 
         // This is the short-cut call for loading just one record via primary key:
-        if (j["table"]["pkey"] != 0)
-            where += '("'+_alias+'"' + '.' + '"'+getPrimaryKey(j["table"]["name"])+'"' + "=" + "'" + j["table"]["pkey"] +"'" + ") AND ";        
+        if (mainTableJSON["pkey"] != 0)
+            this.where += '("'+_aliasOrName+'"' + '.' + '"'+getPrimaryKey(mainTableJSON["name"])+'"' + "=" + "'" + mainTableJSON["pkey"] +"'" + ") AND ";        
+    }
 
-
-        /* Joined Tables */
-        j["joinedTables"].forEach (jt => {
-            let joinToTableOrAlias = _mainTable;
+    processJoinedTables (joinedTablesJSON)
+    {
+        joinedTablesJSON.forEach (jt => {
+            let joinToTableOrAlias = this.mainTable;
             if (jt["joinToTableOrAlias"] != "")
                 joinToTableOrAlias = jt["joinToTableOrAlias"];
             let foreignKey = jt["foreignKey"];
             if (foreignKey == "")
                 foreignKey = getForeignKey(joinToTableOrAlias, jt["name"]);
 
-            _alias = this.getAlias (jt["name"], jt["alias"]);
-            cols += this.getColumns (_alias, jt["columns"]);
+            let _aliasOrName = this.resolveAlias (jt["name"], jt["alias"]);
+            this.cols += this.getColumns (_aliasOrName, jt["columns"], jt["alias"]);
+            this.pkeyCols += '"'+_aliasOrName+'"."' + getPrimaryKey(jt["name"]) + '" AS ' + dizzPkeyPrefix + _aliasOrName + ", ";
 
-            this.alias[_alias] = jt["name"];
-            table += " JOIN "+ '"'+jt["name"]+'"' + " AS " + '"'+_alias+'"' + 
-                " ON " + '"'+_alias+'"' + "." + '"'+getPrimaryKey(jt["name"])+'"' + "=" + '"'+joinToTableOrAlias+'"' + "." + '"'+foreignKey+'"' + " ";
+            this.aliasToName[_aliasOrName] = jt["name"];
+            this.from += " JOIN "+ '"'+jt["name"]+'"' + " AS " + '"'+_aliasOrName+'"' + 
+                " ON " + '"'+_aliasOrName+'"' + "." + '"'+getPrimaryKey(jt["name"])+'"' + "=" + '"'+joinToTableOrAlias+'"' + "." + '"'+foreignKey+'"' + " ";
         });
+    }
+
+    addPkey (table, key)
+    {
+        if (this.pkeyTable[table] == undefined)
+        {
+            this.pkeyTable[table] = [key];
+        }
+        else
+        {
+            let found = false; 
+            this.pkeyTable[table].forEach ((k) =>{
+                if (k == key)
+                    found = true;
+            })
+            if (found == false)
+                this.pkeyTable[table].push (key);
+        }
+    }
+
+    buildPkeyTable (rows)
+    {
+        rows.forEach ((r) =>
+        {
+            let foundProps = [];
+            for (var prop in r) {
+                if (Object.prototype.hasOwnProperty.call(r, prop)) {
+                    if (prop.length > dizzPkeyPrefix.length)
+                    {
+                        if (prop.substring (0, dizzPkeyPrefix.length) == dizzPkeyPrefix)
+                        {
+                            let table = prop.substring (dizzPkeyPrefix.length);
+                            this.addPkey (this.aliasToName[table], r[prop]);
+                            foundProps.push(prop);
+                        }
+                    }
+                }
+            }
+            foundProps.forEach ((p) => {
+                delete r[p];
+            });
+        });
+    }
+
+    constructor (j /*queryJSONString*/)
+    {
+        this.aliasToName = {};
+        this.mainTable = "";
+        this.from = "";
+        this.sql = "";
+        this.cols = "";
+        this.pkeyCols = "";
+        this.where = " WHERE ";
+        this.orderBy = " ORDER BY ";
+        this.pkeyTable = {};
+    
+        //let j = JSON.parse (queryJSONString);
+
+        this.processMainTable (j["table"]);
+        this.processJoinedTables (j["joinedTables"]);
 
         /* Creat WHERE CLAUSE  */
         j["filters"].forEach (f => {            
-            where += '("'+f["table"]+'"' + '.' + '"'+f["column"]+'"' + f["comparison"] + " " + "'" + f["value"] +"'" + ") AND ";
+            this.where += '("'+f["table"]+'"' + '.' + '"'+f["column"]+'"' + f["comparison"] + " " + "'" + f["value"] +"'" + ") AND ";
         });
 
         /* Create ORDER BY CLAUSE  */
-        j["sortFields"].forEach (o => {            
-            orderBy += '"'+o["table"]+'"' + '.' + '"'+o["column"]+'"' + " ";
-            if (o["ascending"] == true)
-                orderBy += "ASC ";
-            else
-                orderBy += "DESC ";
-            orderBy += ", "
-        });
+        if (j["sortFields"].length == 0) {this.orderBy = ""} else
+        {
+            j["sortFields"].forEach (o => {            
+                this.orderBy += '"'+o["table"]+'"' + '.' + '"'+o["column"]+'"' + " ";
+                if (o["ascending"] == true)
+                    this.orderBy += "ASC ";
+                else
+                    this.orderBy += "DESC ";
+                this.orderBy += ", "
+            });
+        }
     
-        this.sql = "SELECT " + cols.substring(0, cols.length-2) + // remove trailing ", "
-            " FROM " + table + where.substring(0, where.length-4)  // remove trailing "AND "
-            + orderBy.substring(0, orderBy.length-2); // remove trailing ", "
-        console.log ("Query: ");
-
-        (async () => {
-            res = await dbTools.getConnectionPool().query(this.sql);
-            console.log (res);
-        })()
+        this.sql = "SELECT " + this.cols +
+            this.pkeyCols.substring (0, this.pkeyCols.length-2) + // remove trailing ", "
+            " FROM " + this.from + this.where.substring(0, this.where.length-4)  // remove trailing "AND "
+            + this.orderBy.substring(0, this.orderBy.length-2); // remove trailing ", "
     }
 }
 
