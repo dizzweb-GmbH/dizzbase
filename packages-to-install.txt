@@ -1,4 +1,2 @@
-npm install express
-npm install socket.io
-npm install pg-logical-replication
-npm install dotenv
+npm install express socket.io pg-logical-replication dotenv
+

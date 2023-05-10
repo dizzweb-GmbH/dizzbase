@@ -18,6 +18,20 @@ async function InitDBDictionary (pool) {
     console.log ('Dictionary loaded.');
 }
 
+// Retrieves all tables t points to
+// The result contains the fkey col of t (as the key) and the name of the table the fkey points to (as the value)
+function getLinkedTables (t)
+{
+    let links = {};
+    fKeyDB.forEach(e => {
+        if (e["table"]==t)
+        {
+            links[e["fkey"]] = e["foreign_table"]
+        }        
+    });
+    return links;
+}
+
 function getPrimaryKey (tableName) {
     return pKeys[tableName];
 }
@@ -39,4 +53,4 @@ function getForeignKey (tableName, joinedTableName) {
     return res;
 }
 
-module.exports = { InitDBDictionary, getPrimaryKey, getForeignKey };
+module.exports = { InitDBDictionary, getPrimaryKey, getForeignKey, getLinkedTables };

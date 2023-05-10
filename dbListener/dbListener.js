@@ -1,7 +1,7 @@
 const rep = require ('pg-logical-replication');
-const PubSub = require('pubsub-js');
 require('dotenv').config();
 const dbTools = require('../dbTools/dbDictionary')
+const dbConnection = require ('../dizzbaseServer/dizzbaseConnection');
 
 function initDBListener ()
 {
@@ -28,30 +28,39 @@ function initDBListener ()
     const plugin = new rep.PgoutputPlugin ({protoVersion: 1, publicationNames: ["pgoutput_dizzbase_pub"]});
 
     service.on('data', (lsn, log) => {
-        //console.log (log);
-        var primekeys = [];
         try
         {
-            if(log["tag"] == "delete" | "insert" | "update"){
-                var pkName = dbTools.getPrimaryKey(log["relation"]["name"])
+            var pkValue = 0;
+            var pkList = []; // We publish a list so that we can change to a multi-key publish in the future
+            var pkName = ""
+            var insertedRow = {};
+            if((log["tag"] == "insert") || (log["tag"] == "update")){
+                pkName = dbTools.getPrimaryKey(log["relation"]["name"]);
+                pkValue = log["new"][pkName];
+                if (log["tag"] == "insert") {insertedRow = log["new"];}
+            }
+            if (log["tag"] == "delete")
+            {
+                pkName = dbTools.getPrimaryKey(log["relation"]["name"]);
+                pkValue = log["key"][pkName];
+            }
 
+            if (pkValue != 0)
+            {
                 var data = {
                     action: log["tag"],
                     table: log["relation"]["name"],
-                    key: log["key"][pkName]
+                    pkValue: pkValue,
+                    insertedRow: insertedRow
                 }
 
-                primekeys.push(data)
-                //console.log(primekeys)
-                
-                PubSub.publish('db_change', primekeys);
+                // We publish a list so that we can change to a multi-key publish in the future
+                pkList.push(data)
+                dbConnection.notifyConnection(pkList);
             }
-            //gSock.send (JSON.stringify(log.change))
         } catch (error) {
             console.log (error);
         }
-        // Do something what you want.
-        // log.change.filter((change) => change.kind === 'insert').length;S
     });
 
     (function proc() {

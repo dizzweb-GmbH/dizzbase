@@ -3,7 +3,6 @@ const dizzbaseConnection = require ('./dizzbaseConnection');
 const dbListener = require ('../dbListener/dbListener');
 const dbTools = require ('../dbTools/dbTools');
 const test = require ('../test/testquery');
-const PubSub = require('pubsub-js');
 
 async function initDizzbaseServer(server) {
     const io = new Server(server, {
@@ -39,13 +38,6 @@ async function initDizzbaseServer(server) {
         });
     });
     
-    // create a function to subscribe to topics
-    var mySubscriber = function (msg, data) {
-        console.log( msg, data );
-    };
-    
-    var token = PubSub.subscribe('db_change', mySubscriber);
-
     await dbTools.InitDB();
     //test.runTestQuery();
     dbListener.initDBListener();

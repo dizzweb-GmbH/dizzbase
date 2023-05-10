@@ -5,6 +5,39 @@ const dizzPkeyPrefix = "dizz_pkey_";
 
 class dizzbaseQuery
 {
+    dbNotify (data) {
+        let dirty = false;
+
+        data.every(e => {
+            let table = e["table"];
+            let key = e["pkValue"];
+            //if ((e["action"] == "delete") || (e["action"] == "update"))
+            try {
+                if (this.pkeyTable[table] != undefined)
+                {
+                    this.pkeyTable[table].every(element => {
+                        if (element == key)
+                        {
+                            dirty = true;
+                            return false;
+                        }
+                        else {return true;}                        
+                    });
+                }                        
+            } catch (error) {
+                console.log (error);                    
+            }
+            if (dirty == false)
+                return true;
+            else
+                return false;   
+        });
+        if (dirty)
+        {
+            this.dbConnection.runQuery(this.request);
+        }
+    }
+
     resolveAlias (tablename, alias) {
         if (alias == undefined) return tablename;
         if (alias == "") return tablename;
@@ -111,7 +144,7 @@ class dizzbaseQuery
         });
     }
 
-    constructor (j)
+    constructor (j, connection)
     {
         this.aliasToName = {};
         this.mainTable = "";
@@ -122,6 +155,7 @@ class dizzbaseQuery
         this.where = " WHERE ";
         this.orderBy = " ORDER BY ";
         this.pkeyTable = {};
+        this.request = j;
     
         this.processMainTable (j["table"]);
         this.processJoinedTables (j["joinedTables"]);
@@ -152,6 +186,8 @@ class dizzbaseQuery
             this.pkeyCols.substring (0, this.pkeyCols.length-2) + // remove trailing ", "
             " FROM " + this.from + this.where.substring(0, this.where.length-4)  // remove trailing "AND "
             + this.orderBy.substring(0, this.orderBy.length-2); // remove trailing ", "
+
+        this.dbConnection = connection;
     }
 }
 
