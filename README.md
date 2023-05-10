@@ -34,5 +34,4 @@ Realtime postgreSQL tool for node js.´
 - SQL Parameter Binding instead of SQL String literals - in dizzbaseTransactions.j and dizzbaseQuery.js
 - SQL injection attack prevention
 - The client can automatically disconnect/reconnect at any time (this is a Socket.IO feature). How are the dizzbaseConnection objects on the client and on the server rebuild in this case
-- dizzbaseTransaction.js Insert/Update: Check for error if the number of field and values are not equel
-- General error handling: How are exceptions caucht in the backend and how are they communicated back to the client
+- dizzbaseTransaction.js Insert/Update: Check for error if the number of field and values are not equal
