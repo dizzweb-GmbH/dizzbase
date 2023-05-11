@@ -40,7 +40,7 @@ npm install express socket.io pg-logical-replication dotenv
 
 ## Starting the backend server from your index.js file
 
-   To start the server simply do something like this:
+   The initialization of the dizzbase server requires accessing the database and is therefore executed async. To start the server simply do something like this:
 
       const { Console } = require('console');
       const dizzbase = require ('dizzbase');
