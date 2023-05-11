@@ -5,6 +5,9 @@ const dbTools = require ('../dbTools/dbTools');
 const test = require ('../test/testquery');
 
 async function initDizzbaseServer(server) {
+    await dbTools.InitDB();
+    dbListener.initDBListener();
+
     const io = new Server(server, {
         cors: {
           origin: true,
@@ -37,10 +40,6 @@ async function initDizzbaseServer(server) {
             console.log ("Client disconnect - "+reason);
         });
     });
-    
-    await dbTools.InitDB();
-    //test.runTestQuery();
-    dbListener.initDBListener();
 }
 
 module.exports = { initDizzbaseServer };
