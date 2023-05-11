@@ -4,8 +4,9 @@ const dbListener = require ('../dbListener/dbListener');
 const dbTools = require ('../dbTools/dbTools');
 const test = require ('../test/testquery');
 
-async function initDizzbaseServer(server) {
+async function initDizzbaseExpressServer(server) {
     await dbTools.InitDB();
+    console.log ("Dizzbase has initialized the database connection.")
     dbListener.initDBListener();
 
     const io = new Server(server, {
@@ -42,4 +43,4 @@ async function initDizzbaseServer(server) {
     });
 }
 
-module.exports = { initDizzbaseServer };
+module.exports = { initDizzbaseExpressServer };
