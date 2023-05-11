@@ -1,17 +1,20 @@
 const pg = require ('pg');
 const fs = require('fs');
+const path = require('path');
 
 var pKeys = {};
 var fKeyDB = {};
 
 async function InitDBDictionary (pool) {
-    pkey_query = fs.readFileSync ('./sql/primarykeys.sql', 'ascii');
+    const sqlPKeyFilePath = path.join(__dirname, '../sql/primarykeys.sql');
+    pkey_query = fs.readFileSync (sqlPKeyFilePath, 'ascii');
     res = await pool.query (pkey_query);
     res.rows.forEach(row => {
         pKeys[row.table] = row.pkey
     });
 
-    pkey_query = fs.readFileSync ('./sql/foreignkeys.sql', 'ascii');
+    const sqlFKeyFilePath = path.join(__dirname, '../sql/foreignkeys.sql');
+    pkey_query = fs.readFileSync (sqlFKeyFilePath, 'ascii');
     res = await pool.query (pkey_query);
     fKeyDB = res.rows;
 

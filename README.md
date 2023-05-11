@@ -11,7 +11,7 @@ Client packages:
 ## Required packages
 npm install express socket.io pg-logical-replication dotenv
 
-## Getting started
+## Configuration of the backend server
 
    Configure the database access in the .env file of your Node.js project, for example:
 
@@ -27,11 +27,46 @@ npm install express socket.io pg-logical-replication dotenv
       - max_replication_slots = 5 
       - max_wal_senders = 5
 
+   Test/demo database: Instead of creating your own database you can also use a script to create a test/demo database that works with the flutter and JavaScript client.
+   To create the demo database log in to postgresql with psql and execute the file node_modules/dizzbase/sql/testdata.sql with the following psql meta-command:
+      \i node_modules/dizzbase/sql/testdata.sql
+   This will also take care of creating the publication and slot a per below.
+
    Create a publication for your database - the publication must be named pgoutput_dizzbase_pub:
       - CREATE PUBLICATION pgoutput_dizzbase_pub FOR ALL TABLES; -- CREATE PUBLICATION NEED TO BE BEFORE SLOT CREATION
 
    In create replication slot for your database - the repliation slot must be named dizzbase_slot:
       - SELECT * FROM pg_create_logical_replication_slot('dizzbase_slot', 'pgoutput');
+
+## Starting the backend server from your index.js file
+
+   To start the server simply do something like this:
+
+      const { Console } = require('console');
+      const dizzbase = require ('dizzbase');
+
+      const express = require('express');
+      const app = express();
+
+      const http = require('http');
+      const server = http.createServer(app);
+
+      app.get('/', (req, res) => {
+         res.send ("Hello, world!");
+      });
+
+      console.log (__dirname);
+
+      // This block ensures proper initialization order - start the TCP listener after everything has been initialized:
+      (async () => {
+         // Start the dizzbase Socket.io server and initialize
+         await dizzbase.dizzbaseExpressServer(server);
+         
+         // do not move out of this async block to ensure everything is initialized properly
+         server.listen(3000, () => {
+            console.log('listening on *:3000');
+         });    
+      })()
 
 ## TODO
 - SQL Parameter Binding instead of SQL String literals - in dizzbaseTransactions.j and dizzbaseQuery.js

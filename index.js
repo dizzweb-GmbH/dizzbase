@@ -1,8 +1,13 @@
 const dizzbaseServer = require ('./dizzbaseServer/dizzbaseServer');
 
-initDizzbaseExpressServer (server)
+async function dizzbaseExpressServer (server)
 {
-    dizzbaseServer.initDizzbaseExpressServer(server)
+    dizzbaseServer.initDizzbaseExpressServer(server);
 }
 
-module.exports = { initDizzbaseExpressServer };
+async function dizzbaseStandaloneServer (port)
+{
+    console.log ("dizzbaseStandaloneServer is not yet implemented, please integrate with express.");
+}
+
+module.exports = { dizzbaseExpressServer, dizzbaseStandaloneServer }
