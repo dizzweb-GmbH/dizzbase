@@ -28,10 +28,10 @@ npm install express socket.io pg-logical-replication dotenv
       - max_wal_senders = 5
 
    Create a publication for your database - the publication must be named pgoutput_dizzbase_pub:
-      CREATE PUBLICATION pgoutput_dizzbase_pub FOR ALL TABLES; -- CREATE PUBLICATION NEED TO BE BEFORE SLOT CREATION
+      - CREATE PUBLICATION pgoutput_dizzbase_pub FOR ALL TABLES; -- CREATE PUBLICATION NEED TO BE BEFORE SLOT CREATION
 
    In create replication slot for your database - the repliation slot must be named dizzbase_slot:
-      SELECT * FROM pg_create_logical_replication_slot('dizzbase_slot', 'pgoutput');
+      - SELECT * FROM pg_create_logical_replication_slot('dizzbase_slot', 'pgoutput');
 
 ## TODO
 - SQL Parameter Binding instead of SQL String literals - in dizzbaseTransactions.j and dizzbaseQuery.js
