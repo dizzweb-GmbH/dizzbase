@@ -34,11 +34,9 @@ npm install express socket.io pg-logical-replication dotenv
 
    Create a publication for your database - the publication must be named pgoutput_dizzbase_pub.
    Then (in that order) create a replication slot for your database - the repliation slot must be named dizzbase_slot:
-   
-      ```
+
       CREATE PUBLICATION pgoutput_dizzbase_pub FOR ALL TABLES; -- CREATE PUBLICATION NEED TO BE BEFORE SLOT CREATION
       SELECT * FROM pg_create_logical_replication_slot('dizzbase_slot', 'pgoutput');
-      ```
 
 ## Starting the backend server from your index.js file
 
