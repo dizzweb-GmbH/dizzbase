@@ -13,7 +13,9 @@ npm install express socket.io pg-logical-replication dotenv
 
 ## Configuration of the backend server
 
-   Configure the database access in the .env file of your Node.js project, for example:
+Install the module locally ```npm install dizzbase``` to ensure the module can load auxilliary files at runtime.
+
+Configure the database access in the .env file of your Node.js project, for example:
 
    POSTGRES_USER=postgres
    POSTGRES_PASSWORD=postgres
@@ -67,6 +69,11 @@ npm install express socket.io pg-logical-replication dotenv
             console.log('listening on *:3000');
          });    
       })()
+
+## Common problems
+
+- If you get an error like "Uncaught database error: role "dizz" does not exist" you are probably missing the .env file with the database connection parameters.
+- "error: replication slot dizzbase_slot" or an error mentioning the publication pgoutput_dizzbase_pub might indicate that you did not create publication/replication (or created them in the wrong database) or that the statements were executed in the wrong order.
 
 ## TODO
 - SQL Parameter Binding instead of SQL String literals - in dizzbaseTransactions.j and dizzbaseQuery.js
