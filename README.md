@@ -68,7 +68,7 @@ To enable authentication, set your JWT secret in the .env file:
 ## Starting the backend server from your index.js file
 
    The initialization of the dizzbase server requires accessing the database and is therefore executed async. To start the server simply do something like this:
-
+   ```js
       const { Console } = require('console');
       const dizzbase = require ('dizzbase');
 
@@ -94,7 +94,7 @@ To enable authentication, set your JWT secret in the .env file:
             console.log('listening on *:3000');
          });    
       })()
-
+      ```
 ## Common problems
 
 - If you get an error like "Uncaught database error: role "dizz" does not exist" you are probably missing the .env file with the database connection parameters.
@@ -105,7 +105,6 @@ To enable authentication, set your JWT secret in the .env file:
 - SQL injection attack prevention
 - The client can automatically disconnect/reconnect at any time (this is a Socket.IO feature). How are the dizzbaseConnection objects on the client and on the server rebuild in this case
 - dizzbaseTransaction.js Insert/Update: Check for error if the number of field and values are not equal
-- Server port is hard-wired to TCP:3000
 - Currently no SSL support
 - Server requires express - add feature run as stand alone socket.io server
 
