@@ -10,27 +10,30 @@ Client packages:
 
 ## Postgres configuration
 Enable logical decoding in your PostgreSQL database by updating the postgresql.conf configuration file: 
-   - wal_level = logical 
-   - max_replication_slots = 5 
-   - max_wal_senders = 5
+   ```
+   wal_level = logical 
+   max_replication_slots = 5 
+   max_wal_senders = 5
+   ```
 
 Create your own database and a user for the database. dizzbase requires two user:
 - A superuser (usually user "postgres") with full right for the admin tables (eg. user management). Admin tables will be created automatically and have the prefix dizzbase_ in their name.
 - A normal user that owns the applications tables in the database and does not have superuser privileges. This user MUST NOT have access to the dizz_* admin tables.
 
 To create the non-superuser, you can execute something like this:
-
+```SQL
    CREATE USER my_user WITH PASSWORD 'my-strong-password';
    GRANT ALL PRIVILEGES ON DATABASE my_db TO my_user;
    GRANT CREATE ON DATABASE my_db TO my_user;
-
+```
 Then use my_user (not the superuser!) to create your applications database tables.  
 
 Next, as the superuser, create a publication for your database - the publication must be named pgoutput_dizzbase_pub.
 Then (in that order) create a replication slot for your database - the repliation slot must be named dizzbase_slot:
-
+```SQL
    CREATE PUBLICATION pgoutput_dizzbase_pub FOR ALL TABLES; -- CREATE PUBLICATION NEED TO BE BEFORE SLOT CREATION
    SELECT * FROM pg_create_logical_replication_slot('dizzbase_slot', 'pgoutput');
+```
 
 Test/demo database: Instead of creating your own database you can also use a script to create a test/demo database that works with the flutter and JavaScript client.
 To create the demo database log in to postgresql with psql and execute the file node_modules/dizzbase/sql/testdata.sql with the following psql meta-command:
@@ -45,7 +48,7 @@ Install the module locally ```npm install dizzbase``` to ensure the module can l
 ## Configuration of the backend server
 
 Configure the database access in the .env file of your Node.js project, for example:
-
+```
    POSTGRES_USER=my_user
    POSTGRES_PASSWORD=my-strong-password
 
@@ -55,7 +58,7 @@ Configure the database access in the .env file of your Node.js project, for exam
    POSTGRES_DB_NAME=my_db
    POSTGRES_DB_HOST=localhost
    POSTGRES_DB_PORT=5432
-
+```
 ## Enabling JWT Bearer token authentication
 
 To enable authentication, set your JWT secret in the .env file:
