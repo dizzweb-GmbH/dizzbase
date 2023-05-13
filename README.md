@@ -43,7 +43,7 @@ This will also take care of creating the publication and slot a per below.
 ## Installation
 Install the module locally ```npm install dizzbase``` to ensure the module can load auxilliary files at runtime.
 
-(If you want to develop dizzbase, download the code from github and install the required pacakges: ```npm install express socket.io pg-logical-replication dotenv argon2 jsonwebtoken```)
+(If you want to develop dizzbase, download the code from github and install the required packages: ```npm install express socket.io pg-logical-replication dotenv argon2 jsonwebtoken```)
 
 ## Configuration of the backend server
 

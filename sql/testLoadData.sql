@@ -52,16 +52,5 @@ INSERT INTO "order" (order_name, customer_id, sales_rep_id, services_rep_id, ord
 INSERT INTO "order" (order_name, customer_id, sales_rep_id, services_rep_id, order_date, order_status, order_revenue)
     VALUES ('drinks', 1, 2, 3, '2023-04-01', 'open', 115.15);
 
-\i dizzbase.sql
-\echo 'NOTE: If you saw an error in the previous line, the dizzbase.sql initialization script could not be found.'
-\echo 'NOTE: You need to \\i execute this (testdata.sql) script from the directory it resides in, eg "cd" or in psql "\\i cd ...." to the "dizzbase/sql/" directory first.'
-\echo 'NOTE: Current working directory: '
-\! pwd
-\echo ' '
-
-/* password hash is for password "my_password" */
-INSERT INTO dizzbase_user (user_name, user_email, user_role, user_pwd_argon2, user_verified)
-    values ('tim', 'tim@nodomain.com', 'user', '$argon2id$v=19$m=65536,t=3,p=4$ZUbsmM9zBbvMnq58iWMOXQ$frAyiGtAZjtZ6tRTZdrsgnq/G9OtNUe0mOa9gDO3TIw', TRUE);
-
 CREATE PUBLICATION pgoutput_dizzbase_pub FOR ALL TABLES; -- CREATE PUBLICATION NEED TO BE BEFORE SLOT CREATION
 SELECT * FROM pg_create_logical_replication_slot('dizzbase_slot', 'pgoutput');
