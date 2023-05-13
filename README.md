@@ -95,9 +95,10 @@ To enable authentication, set your JWT secret in the .env file:
          });    
       })()
       ```
+
 ## Common problems
 
-- If you get an error like "Uncaught database error: role "dizz" does not exist" you are probably missing the .env file with the database connection parameters.
+- If you get an error like "Uncaught database error: role 'dizz' does not exist" you are probably missing the .env file with the database connection parameters.
 - "error: replication slot dizzbase_slot" or an error mentioning the publication pgoutput_dizzbase_pub might indicate that you did not create publication/replication (or created them in the wrong database) or that the statements were executed in the wrong order.
 
 ## TODO
