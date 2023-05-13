@@ -94,7 +94,7 @@ To enable authentication, set your JWT secret in the .env file:
             console.log('listening on *:3000');
          });    
       })()
-      ```
+   ```
 
 ## Common problems
 
