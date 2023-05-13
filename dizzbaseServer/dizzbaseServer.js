@@ -1,8 +1,10 @@
 const { Server } = require("socket.io");
 const dizzbaseConnection = require ('./dizzbaseConnection');
 const dbListener = require ('../dbListener/dbListener');
+const dizzbaseAuthentication = require ('./dizzbaseAuthentication');
 const dbTools = require ('../dbTools/dbTools');
-const test = require ('../test/testquery');
+
+const socketioJwt = require('socketio-jwt');
 
 async function initDizzbaseExpressServer(server) {
     await dbTools.InitDB();
@@ -15,9 +17,34 @@ async function initDizzbaseExpressServer(server) {
           methods: ["GET", "POST"]
         }
     });
+
+    var JWT = process.env.JWT_SECRET;
+    if (JWT == undefined) {JWT = "";}
     
+    if (JWT != "") 
+    {
+        io.use(socketioJwt.authorize({
+            secret: process.env.JWT_SECRET, // Replace with your secret key
+            handshake: true,
+            auth_header_required: true,
+            
+            fail: function (error, data, accept) {
+                if (error) {
+                    console.log("Failed authentication - invalid JWT");
+                    accept(new Error("JWT"));
+                } else {
+                    console.log("Failed authentication - unknown error.");
+                    accept(null, false);
+                }
+            }
+        }));
+    }
+
     io.on('connection', function (socket) {
         console.log('Client has connected');
+        
+        if (process.env.JWT_SECRET)
+            console.log('JWT: ', socket.decoded_token.name);
         var uuidList = [];
     
         socket.on('init', (_uuid) => {
@@ -33,6 +60,10 @@ async function initDizzbaseExpressServer(server) {
     
         socket.on('dbrequest', (req) => {
             dizzbaseConnection.dbRequestEvent (req, socket);
+        });
+    
+        socket.on('dizzbase_login', (req) => {
+            dizzbaseAuthentication.dizzbaseLogin(req, socket);
         });
     
         socket.on('disconnect', async (reason) => {
