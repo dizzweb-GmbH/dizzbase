@@ -62,9 +62,9 @@ Configure the database access in the .env file of your Node.js project, for exam
 ## Enabling JWT Bearer token authentication
 
 To enable authentication, set your JWT secret in the .env file:
-
+   ```
    JWT_SECRET=your-jwt-secret-do-not-share
-
+   ```
 ## Starting the backend server from your index.js file
 
    The initialization of the dizzbase server requires accessing the database and is therefore executed async. To start the server simply do something like this:
