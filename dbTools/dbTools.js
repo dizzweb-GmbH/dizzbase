@@ -35,7 +35,7 @@ function getConnectionPool () {
 }
 
 function getConnectionPoolAdmin () {
-    return pool;
+    return poolAdmin;
 }
 
 module.exports = { InitDB, getConnectionPool, getConnectionPoolAdmin };

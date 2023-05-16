@@ -23,6 +23,7 @@ async function initDizzbaseExpressServer(server) {
     io.on('connection', function (socket) {
         var socketUuid = crypto.randomUUID();
         connectionsOfSocket = {};
+        loginsOfSocket = {};
         sockets[socketUuid] = connectionsOfSocket;
 
         function getConnection(fromClientPacket)
@@ -48,8 +49,17 @@ async function initDizzbaseExpressServer(server) {
             connection.dbRequestEvent (fromClientPacket);
         });
     
-        socket.on('dizzbase_login', (req) => {
-            dizzbaseAuthentication.dizzbaseLogin(req, socket);
+        socket.on('dizzbase_auth_request', (req) => {
+            dizzbaseAuthentication.dizzbaseAuthRequest(req, socket, 
+                (action, user) => {
+                    if (action == "login") {
+                        loginsOfSocket[user.uuid] = user;
+                    }
+                    if (action == "logout") {
+                        try {delete loginsOfSocket[user.uuid];} catch (error) {console.log ("socket.on('dizzbase_auth_request' - error deleting login: "+error)}                        
+                    }
+                }
+            );
         });
     
         socket.on('disconnect', async (reason) => {

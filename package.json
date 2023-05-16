@@ -1,6 +1,6 @@
 {
   "name": "dizzbase",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Realtime postgreSQL tool for node js.",
   "keywords": [
     "realtime",
