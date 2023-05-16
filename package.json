@@ -1,6 +1,6 @@
 {
   "name": "dizzbase",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Realtime postgreSQL tool for node js.",
   "keywords": [
     "realtime",
@@ -9,7 +9,7 @@
     "flutter",
     "dart",
     "database"
-  ],  
+  ],
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -21,14 +21,16 @@
       "email": "rpkink@hotmail.com"
     },
     {
-    "name": "Leopold Kink",
-    "email": "leopold@dizzweb.com"
-    }    
+      "name": "Leopold Kink",
+      "email": "leopold@dizzweb.com"
+    }
   ],
   "license": "ISC",
   "dependencies": {
+    "argon2": "^0.30.3",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
     "pg-logical-replication": "^2.0.3",
     "socket.io": "^4.6.1"
   }

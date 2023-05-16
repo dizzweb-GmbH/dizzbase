@@ -12,13 +12,6 @@ function initConnection(_uuid, nickName, socket) {
     return _connection;
 }
 
-function closeConnections (_uuidList)
-{
-    _uuidList.forEach ((_uuid) => {
-        delete connections[_uuid];
-    });
-}
-
 class dizzbaseConnection
 {
     constructor (_uuid, _nickName, _socket)
@@ -60,9 +53,9 @@ class dizzbaseConnection
                     console.error (`Invalid dizzbaseRequestType: ${fromClientPacket.dizzbaseRequestType}`);
             }
             try {
-                res = await execSQL(fromClientPacket, sql);
+                res = await this.execSQL(fromClientPacket, sql);
             } catch (error) {
-                console.log ("ERROR in dizzbaseConnection/dbRequestEvent - probably unknow uuid due to lost connection.");
+                console.log ("ERROR in dizzbaseConnection while executing SQL for transaction: " + error.toString());
             }
         }
     }
@@ -103,7 +96,7 @@ class dizzbaseConnection
         console.log ("    Audit for connection: "+this.nickName+" - "+this.uuid);    
         for (var prop in this.queries) {
             if (Object.prototype.hasOwnProperty.call(this.queries, prop)) {
-                console.log ("          Query: "+this.queries[prop].fromClientPacket.nickName + " - " + this.queries[prop].fromClientPacket.uuid);
+                console.log ("          Query: "+this.queries[prop].fromClientPacket.nickName + " - " + this.queries[prop].fromClientPacket.uuid + " - " + this.queries[prop].fromClientPacket.transactionuuid);
             }
         }
     }
@@ -161,4 +154,4 @@ function notifyConnection(pkList)
     }
 }
 
-module.exports = { initConnection, closeConnections, notifyConnection };
+module.exports = { initConnection, notifyConnection };

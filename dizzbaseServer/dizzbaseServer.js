@@ -4,7 +4,6 @@ const dbListener = require ('../dbListener/dbListener');
 const dizzbaseAuthentication = require ('./dizzbaseAuthentication');
 const dbTools = require ('../dbTools/dbTools');
 
-const socketioJwt = require('socketio-jwt');
 var sockets = {};
 
 async function initDizzbaseExpressServer(server) {
@@ -39,9 +38,9 @@ async function initDizzbaseExpressServer(server) {
 
         console.log('Client has connected.');
 
-        socket.on('close', (_uuid) => {
-            // TODO Close connection
-
+        socket.on('close_connection', (_uuid) => {
+            connectionsOfSocket[_uuid].dispose();
+            delete connectionsOfSocket[_uuid];
         });
     
         socket.on('dbrequest', (fromClientPacket) => {
@@ -54,7 +53,6 @@ async function initDizzbaseExpressServer(server) {
         });
     
         socket.on('disconnect', async (reason) => {
-            // TODO Close connection
             console.log ("Client disconnect - "+reason);
             for (var prop in connectionsOfSocket) {
                 if (Object.prototype.hasOwnProperty.call(connectionsOfSocket, prop)) {

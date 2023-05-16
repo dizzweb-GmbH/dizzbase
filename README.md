@@ -43,14 +43,14 @@ Configure the database access in the .env file of your Node.js project, for exam
    POSTGRES_USER=my_user
    POSTGRES_PASSWORD=my-strong-password
 
-   POSTGRES_SUPERUSER_USER=postgres
-   POSTGRES_SUPERUSER_PASSWORD=postgres
+   POSTGRES_ADMIN_USER=postgres
+   POSTGRES_ADMIN_PASSWORD=postgres
 
    POSTGRES_DB_NAME=my_db
    POSTGRES_DB_HOST=localhost
    POSTGRES_DB_PORT=5432
 ```
-## Enabling JWT Bearer token authentication
+## Enabling authentication
 
 To enable authentication, set your JWT secret in the .env file:
    ```
