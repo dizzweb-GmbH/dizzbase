@@ -7,9 +7,9 @@ function initDBListener ()
 {
     const service = new rep.LogicalReplicationService(
         {
-            user: process.env.POSTGRES_USER,
+            user: process.env.POSTGRES_ADMIN_USER,
             database: process.env.POSTGRES_DB_NAME,
-            password: process.env.POSTGRES_PASSWORD,
+            password: process.env.POSTGRES_ADMIN_PASSWORD,
             port: process.env.POSTGRES_DB_PORT,
             host: process.env.POSTGRES_DB_HOST,
         },

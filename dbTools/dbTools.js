@@ -1,8 +1,10 @@
 const dbDictionary = require ('./dbDictionary');
+const dbDizzbaseAdmin = require ('./dbDizzbaseAdmin.js');
 const { Pool } = require('pg')
 require('dotenv').config();
 
 let pool;
+let poolAdmin;
 
 async function InitDB (params) {
     pool = new Pool(
@@ -13,16 +15,27 @@ async function InitDB (params) {
             port: process.env.POSTGRES_DB_PORT,
             host: process.env.POSTGRES_DB_HOST,
         }
-    )
+    );
+    poolAdmin = new Pool(
+        {
+            user: process.env.POSTGRES_ADMIN_USER,
+            database: process.env.POSTGRES_DB_NAME,
+            password: process.env.POSTGRES_ADMIN_PASSWORD,
+            port: process.env.POSTGRES_DB_PORT,
+            host: process.env.POSTGRES_DB_HOST,
+        }
+    );
     
     await dbDictionary.InitDBDictionary(pool);
-    //const res = await pool.query('SELECT NOW()')
-    //console.log (res);
-    //await pool.end()        
+    await dbDizzbaseAdmin.initDizzbaseAdmin (poolAdmin);
 }
 
 function getConnectionPool () {
     return pool;
 }
 
-module.exports = { InitDB, getConnectionPool };
+function getConnectionPoolAdmin () {
+    return pool;
+}
+
+module.exports = { InitDB, getConnectionPool, getConnectionPoolAdmin };

@@ -5,41 +5,11 @@ const dbDictionary = require ('../dbTools/dbDictionary');
 
 let connections = {}; // list of active connections with uuid as key and the dizzbaseConnection object as value.
 
-async function dbRequestEvent(request) {
-
-    if (request['type'] == 'dizzbasequery')
-    {
-        connections[request['uuid']].setQuery (request);
-        connections[request['uuid']].runQuery (request);
-    } else {
-        let sql = "";
-        if (request['type'] == 'dizzbaseupdate')
-        {
-            sql = dizzbaseTransactions.dizzbaseUpateStatement (request);
-        }
-        if (request['type'] == 'dizzbaseinsert')
-        {
-            sql = dizzbaseTransactions.dizzbaseInsertStatement (request);
-        }
-        if (request['type'] == 'dizzbasedelete')
-        {
-            sql = dizzbaseTransactions.dizzbaseDeleteStatement (request);
-        }
-        if (request['type'] == 'dizzbasedirectsql')
-        {
-            sql = request["sql"];
-        }
-        try {
-            connections[request['uuid']].executeTransaction(request, sql);            
-        } catch (error) {
-            console.log ("ERROR in dizzbaseConnection/dbRequestEvent - probably unknow uuid due to lost connection.");
-        }
-    }
-}
-
-function initConnection(_uuid, socket) {
-    let _connection = new dizzbaseConnection(_uuid, socket);
+function initConnection(_uuid, nickName, socket) {
+    let _connection = new dizzbaseConnection(_uuid, nickName, socket);
     connections[_uuid] = _connection;
+
+    return _connection;
 }
 
 function closeConnections (_uuidList)
@@ -51,72 +21,101 @@ function closeConnections (_uuidList)
 
 class dizzbaseConnection
 {
-    constructor (_uuid, _socket)
+    constructor (_uuid, _nickName, _socket)
     {
-        this.query = null;
         this.uuid = _uuid
         this.socket = _socket;
+        this.nickName = _nickName;
+        this.queries = {};
     }
 
-    setQuery (request)
-    {
-        this.query = new dizzbaseQuery.dizzbaseQuery (request, this);
-    }
+    async  dbRequestEvent(fromClientPacket) {
+        var res;    
 
-    async runQuery (request)
-    {
-        let response = {};
-        let stat = "";
-        try {
-            res = await this.query.runQuery();
-        } catch (error) {
-            stat = this.createStatusReport (request, error, 0, this.query.sql);
-            response['status'] = stat;
-            this.socket.emit ('data', response);
-            return;
-        }
-        stat = this.createStatusReport (request, '', res.rowCount, '');
-        response['data'] = res;
-        response['status'] = stat;
-        this.socket.emit ('data', response);    
-        return;
-    }
-
-    async executeTransaction (request, sql)
-    {
-        var res;
-        let stat = {};
-        let retVal = {};
-        let err = false;
-        try {
-            res = await dbTools.getConnectionPool().query (sql);
-        } catch (error) {
-            let message = "";
-            try {message = error["message"];} catch (error) {}
-            stat = this.createStatusReport (request, error + " | " + message, 0, sql);
-            err = true;
-        }
-        if (err == false){stat = this.createStatusReport (request, '', res.rowCount, '');}
-
-        retVal["status"] = stat;
-        if ((request['type'] == 'dizzbaseinsert') || (request['type'] == 'dizzbasedirectsql'))
+        if (fromClientPacket.dizzbaseRequestType == 'dizzbasequery')
         {
-            if (err == false) retVal["data"] = res["rows"];
+            let q = this.queries[fromClientPacket.transactionuuid];
+            if (q == null)
+            {
+                q = new dizzbaseQuery.dizzbaseQuery (fromClientPacket, this);
+                this.queries[fromClientPacket.transactionuuid]=q;
+            }
+            q.execQuery();
+        } else {
+            let sql = "";
+            switch (fromClientPacket.dizzbaseRequestType) {
+                case 'dizzbaseupdate':
+                    sql = dizzbaseTransactions.dizzbaseUpateStatement (fromClientPacket['dizzbaseRequest']);
+                    break;
+                case 'dizzbaseinsert':
+                    sql = dizzbaseTransactions.dizzbaseInsertStatement (fromClientPacket['dizzbaseRequest']);
+                    break;
+                case 'dizzbasedelete':
+                    sql = dizzbaseTransactions.dizzbaseDeleteStatement (fromClientPacket['dizzbaseRequest']);
+                    break;
+                case 'dizzbasedirectsql':
+                    sql = fromClientPacket['dizzbaseRequest']["sql"];
+                    break;
+                default:
+                    console.error (`Invalid dizzbaseRequestType: ${fromClientPacket.dizzbaseRequestType}`);
+            }
+            try {
+                res = await execSQL(fromClientPacket, sql);
+            } catch (error) {
+                console.log ("ERROR in dizzbaseConnection/dbRequestEvent - probably unknow uuid due to lost connection.");
+            }
         }
-        this.socket.emit ('status', retVal);
-        return;
+    }
+   
+    async execSQL (fromClientPacket, sql)
+    {
+        var dizzbaseFromServerPacket = {};
+        try {
+            res = await dbTools.getConnectionPool().query(sql);
+        } catch (error) {
+            this.buildToServerPacket (dizzbaseFromServerPacket, fromClientPacket, error, 0);
+            this.socket.emit ('dbrequest_response', dizzbaseFromServerPacket);
+            return res;
+        }
+        this.buildToServerPacket (dizzbaseFromServerPacket, fromClientPacket, '', res.rowCount);
+
+        dizzbaseFromServerPacket['data'] = res.rows;
+
+        //console.log ("EMITTING: Conn: " + this.nickName +" Transaction: " + fromClientPacket.dizzbaseRequest.nickName);
+        this.socket.emit ('dbrequest_response', dizzbaseFromServerPacket);    
+        return res;                   
     }
 
-    createStatusReport (request, error, rowCount, sql)
+    buildToServerPacket (dizzbaseFromServerPacket, fromClientPacket, error, rowCount)
     {
-        let statusReport = {};
-        statusReport['uuid'] = this.uuid;
-        statusReport['type'] = request["type"];
-        statusReport["transactionuuid"] = request["transactionuuid"];
-        statusReport['error'] = error;
-        statusReport['rowCount'] = rowCount;
-        statusReport['sql'] = sql;
-        return statusReport;
+        dizzbaseFromServerPacket['uuid'] = this.uuid;
+        dizzbaseFromServerPacket['dizzbaseRequestType'] = fromClientPacket["dizzbaseRequestType"];
+        dizzbaseFromServerPacket["transactionuuid"] = fromClientPacket["transactionuuid"];
+        if (error.message != undefined)
+            dizzbaseFromServerPacket['error'] = error.message.toString();
+        else
+            dizzbaseFromServerPacket['error'] = error.toString();
+        dizzbaseFromServerPacket['rowCount'] = rowCount;
+    }
+
+    audit ()
+    {
+        console.log ("    Audit for connection: "+this.nickName+" - "+this.uuid);    
+        for (var prop in this.queries) {
+            if (Object.prototype.hasOwnProperty.call(this.queries, prop)) {
+                console.log ("          Query: "+this.queries[prop].fromClientPacket.nickName + " - " + this.queries[prop].fromClientPacket.uuid);
+            }
+        }
+    }
+    
+    dispose()
+    {
+        for (var prop in this.queries) {
+            if (Object.prototype.hasOwnProperty.call(this.queries, prop)) {
+                this.queries[prop].dispose();
+                delete this.queries[prop];
+            }
+        }        
     }
 }
 
@@ -151,13 +150,15 @@ function notifyConnection(pkList)
     }
     for (var prop in connections) {
         if (Object.prototype.hasOwnProperty.call(connections, prop)) {
-            if (connections[prop].query != null)
-            {
-                if (connections[prop].query != undefined)
-                    connections[prop].query.dbNotify (pkList);
+
+            let queries = connections[prop].queries;
+            for (var prop_q in queries) {
+                if (Object.prototype.hasOwnProperty.call(queries, prop_q)) {
+                    queries[prop_q].dbNotify (pkList);
+                }
             }
         }
     }
 }
 
-module.exports = { dbRequestEvent, initConnection, closeConnections, notifyConnection };
+module.exports = { initConnection, closeConnections, notifyConnection };

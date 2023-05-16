@@ -1,8 +1,3 @@
-\c postgres;
-DROP DATABASE IF EXISTS test WITH (FORCE);
-CREATE DATABASE test;
-\c test;
-
 CREATE TABLE employee (
     employee_id SERIAL PRIMARY KEY,
     employee_name VARCHAR(50) NOT NULL,
@@ -51,6 +46,3 @@ INSERT INTO "order" (order_name, customer_id, sales_rep_id, services_rep_id, ord
     VALUES ('fruit', 3, 1, 3, '2023-03-12', 'open', 110.25);
 INSERT INTO "order" (order_name, customer_id, sales_rep_id, services_rep_id, order_date, order_status, order_revenue)
     VALUES ('drinks', 1, 2, 3, '2023-04-01', 'open', 115.15);
-
-CREATE PUBLICATION pgoutput_dizzbase_pub FOR ALL TABLES; -- CREATE PUBLICATION NEED TO BE BEFORE SLOT CREATION
-SELECT * FROM pg_create_logical_replication_slot('dizzbase_slot', 'pgoutput');

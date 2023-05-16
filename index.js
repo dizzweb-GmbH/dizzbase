@@ -10,4 +10,9 @@ async function dizzbaseStandaloneServer (port)
     console.log ("dizzbaseStandaloneServer is not yet implemented, please integrate with express.");
 }
 
-module.exports = { dizzbaseExpressServer, dizzbaseStandaloneServer }
+function audit ()
+{
+    dizzbaseServer.auditSockets();
+}
+
+module.exports = { dizzbaseExpressServer, dizzbaseStandaloneServer, audit }

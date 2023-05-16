@@ -11,7 +11,6 @@ class dizzbaseQuery
         data.every(e => {
             let table = e["table"];
             let key = e["pkValue"];
-            //if ((e["action"] == "delete") || (e["action"] == "update"))
             try {
                 if (this.pkeyTable[table] != undefined)
                 {
@@ -34,9 +33,18 @@ class dizzbaseQuery
         });
         if (dirty)
         {
-            this.dbConnection.runQuery(this.request);
+            this.execQuery();
         }
     }
+
+    async execQuery()
+    {
+        res = await this.dizzbaseConnection.execSQL(this.fromClientPacket, this.sql);
+        if (res != null) {
+            if (res.rowCount >0) this.buildPkeyTable (res.rows);
+        }
+    }
+
 
     resolveAlias (tablename, alias) {
         if (alias == undefined) return tablename;
@@ -59,13 +67,6 @@ class dizzbaseQuery
             colsStr += ", ";
         });
         return colsStr;
-    }
-
-    async runQuery() {
-        res = await dbTools.getConnectionPool().query(this.sql);
-        this.buildPkeyTable (res.rows);
-
-        return res.rows;
     }
 
     processMainTable (mainTableJSON)
@@ -144,7 +145,7 @@ class dizzbaseQuery
         });
     }
 
-    constructor (j, connection)
+    constructor (_fromClientPacket, _connection)
     {
         this.aliasToName = {};
         this.mainTable = "";
@@ -155,7 +156,10 @@ class dizzbaseQuery
         this.where = " WHERE ";
         this.orderBy = " ORDER BY ";
         this.pkeyTable = {};
-        this.request = j;
+        this.fromClientPacket = _fromClientPacket;
+        this.dizzbaseConnection = _connection;
+
+        let j = this.fromClientPacket.dizzbaseRequest;
     
         this.processMainTable (j["table"]);
         this.processJoinedTables (j["joinedTables"]);
@@ -186,8 +190,11 @@ class dizzbaseQuery
             this.pkeyCols.substring (0, this.pkeyCols.length-2) + // remove trailing ", "
             " FROM " + this.from + this.where.substring(0, this.where.length-4)  // remove trailing "AND "
             + this.orderBy.substring(0, this.orderBy.length-2); // remove trailing ", "
+    }
 
-        this.dbConnection = connection;
+    dispose()
+    {
+        delete this.pkeyTable;
     }
 }
 

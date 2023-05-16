@@ -17,7 +17,7 @@ Enable logical decoding in your PostgreSQL database by updating the postgresql.c
    ```
 
 Create your own database and a user for the database. dizzbase requires two user:
-- A superuser (usually user "postgres") with full right for the admin tables (eg. user management). Admin tables will be created automatically and have the prefix dizzbase_ in their name.
+- A superuser (usually user "postgres") with full right for the admin tables (eg. user management). Admin tables are created automatically.
 - A normal user that owns the applications tables in the database and does not have superuser privileges. This user MUST NOT have access to the dizz_* admin tables.
 
 To create the non-superuser, you can execute something like this:
@@ -28,17 +28,8 @@ To create the non-superuser, you can execute something like this:
 ```
 Then use my_user (not the superuser!) to create your applications database tables.  
 
-Next, as the superuser, create a publication for your database - the publication must be named pgoutput_dizzbase_pub.
-Then (in that order) create a replication slot for your database - the repliation slot must be named dizzbase_slot:
-```SQL
-   CREATE PUBLICATION pgoutput_dizzbase_pub FOR ALL TABLES; -- CREATE PUBLICATION NEED TO BE BEFORE SLOT CREATION
-   SELECT * FROM pg_create_logical_replication_slot('dizzbase_slot', 'pgoutput');
-```
-
-Test/demo database: Instead of creating your own database you can also use a script to create a test/demo database that works with the flutter and JavaScript client.
-To create the demo database log in to postgresql with psql and execute the file node_modules/dizzbase/sql/testdata.sql with the following psql meta-command:
-```\i node_modules/dizzbase/sql/testdata.sql```
-This will also take care of creating the publication and slot a per below.
+Test/demo database: Instead of creating your own database you can also use a provided script to create a test/demo database that works with the flutter and JavaScript client.
+Install the demo data into the demo database before (!!!) you start the backend for the first time by running the shell script sql/testResetDB.sh included in the dizzbase npm module. You can also get the script from github https://github.com/dizzweb-GmbH/dizzbase. The shell script uses some of the *.sql files in the sql folder, so start it ```/bin/sh testResetDB.sql``` in the sql directory.
 
 ## Installation
 Install the module locally ```npm install dizzbase``` to ensure the module can load auxilliary files at runtime.
@@ -100,6 +91,7 @@ To enable authentication, set your JWT secret in the .env file:
 
 - If you get an error like "Uncaught database error: role 'dizz' does not exist" you are probably missing the .env file with the database connection parameters.
 - "error: replication slot dizzbase_slot" or an error mentioning the publication pgoutput_dizzbase_pub might indicate that you did not create publication/replication (or created them in the wrong database) or that the statements were executed in the wrong order.
+- If you receive an error like "PUBLICATION already exists" or "REPLICATION SLOT already exisits" you need to manually remove them (note that they might be in a different database!) - use ```DROP PUBLICATION ...``` and ```SELECT pg_drop_replication_slot('...')```.
 
 ## TODO
 - SQL Parameter Binding instead of SQL String literals - in dizzbaseTransactions.j and dizzbaseQuery.js

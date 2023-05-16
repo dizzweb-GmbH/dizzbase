@@ -5,10 +5,11 @@ const dizzbaseAuthentication = require ('./dizzbaseAuthentication');
 const dbTools = require ('../dbTools/dbTools');
 
 const socketioJwt = require('socketio-jwt');
+var sockets = {};
 
 async function initDizzbaseExpressServer(server) {
     await dbTools.InitDB();
-    console.log ("Dizzbase has initialized the database connection.")
+    console.log ("Database connection initialized.")
     dbListener.initDBListener();
 
     const io = new Server(server, {
@@ -18,48 +19,34 @@ async function initDizzbaseExpressServer(server) {
         }
     });
 
-    var JWT = process.env.JWT_SECRET;
-    if (JWT == undefined) {JWT = "";}
-    
-    if (JWT != "") 
-    {
-        io.use(socketioJwt.authorize({
-            secret: process.env.JWT_SECRET, // Replace with your secret key
-            handshake: true,
-            auth_header_required: true,
-            
-            fail: function (error, data, accept) {
-                if (error) {
-                    console.log("Failed authentication - invalid JWT");
-                    accept(new Error("JWT"));
-                } else {
-                    console.log("Failed authentication - unknown error.");
-                    accept(null, false);
-                }
-            }
-        }));
-    }
+    //setInterval(auditSockets, 1000);
 
     io.on('connection', function (socket) {
-        console.log('Client has connected');
-        
-        if (process.env.JWT_SECRET)
-            console.log('JWT: ', socket.decoded_token.name);
-        var uuidList = [];
-    
-        socket.on('init', (_uuid) => {
-            uuidList.push (_uuid, socket);
-            dizzbaseConnection.initConnection (_uuid, socket);
-        });
-    
+        var socketUuid = crypto.randomUUID();
+        connectionsOfSocket = {};
+        sockets[socketUuid] = connectionsOfSocket;
+
+        function getConnection(fromClientPacket)
+        {
+            var c = connectionsOfSocket[fromClientPacket.uuid]
+            if (c == null)
+            {
+                c = dizzbaseConnection.initConnection (fromClientPacket.uuid, fromClientPacket.nickName, socket);
+                connectionsOfSocket[fromClientPacket.uuid]=c;
+            }
+            return c;
+        }
+
+        console.log('Client has connected.');
+
         socket.on('close', (_uuid) => {
-            let _temp_uuidList = [];
-            _temp_uuidList.push (_uuid);
-            dizzbaseConnection.closeConnections (_temp_uuidList);
+            // TODO Close connection
+
         });
     
-        socket.on('dbrequest', (req) => {
-            dizzbaseConnection.dbRequestEvent (req, socket);
+        socket.on('dbrequest', (fromClientPacket) => {
+            var connection = getConnection (fromClientPacket);
+            connection.dbRequestEvent (fromClientPacket);
         });
     
         socket.on('dizzbase_login', (req) => {
@@ -67,11 +54,37 @@ async function initDizzbaseExpressServer(server) {
         });
     
         socket.on('disconnect', async (reason) => {
-            dizzbaseConnection.closeConnections (uuidList);
-            uuidList = [];
+            // TODO Close connection
             console.log ("Client disconnect - "+reason);
+            for (var prop in connectionsOfSocket) {
+                if (Object.prototype.hasOwnProperty.call(connectionsOfSocket, prop)) {
+                    connectionsOfSocket[prop].dispose();
+                    delete connectionsOfSocket[prop];
+                }
+            }            
+            delete sockets[socketUuid];
         });
     });
 }
 
-module.exports = { initDizzbaseExpressServer };
+function auditSockets() {
+    console.log("");
+    console.log ("*** Socket/Connection/Query Audit starting ***");
+    var found = false;
+    for (var prop in sockets) {
+        if (Object.prototype.hasOwnProperty.call(sockets, prop)) {
+            found=true;
+            console.log ("Active Socket: "+prop);    
+            let connections = sockets[prop];
+            for (var prop_c in connections) {
+                if (Object.prototype.hasOwnProperty.call(connections, prop_c)) {
+                    connections[prop_c].audit();
+                }
+            }
+        }
+    }
+    if (found==false) console.log ("No active sockets found.");
+    console.log("");
+}
+
+module.exports = { initDizzbaseExpressServer, auditSockets};
