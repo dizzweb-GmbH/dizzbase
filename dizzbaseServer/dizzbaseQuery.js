@@ -1,5 +1,7 @@
 const { getPrimaryKey, getForeignKey } = require("../dbTools/dbDictionary");
 const dbTools = require ('../dbTools/dbTools');
+const dizzbaseTransactions = require ('./dizzbaseTransactions');
+const format = require ("pg-format");
 
 const dizzPkeyPrefix = "dizz_pkey_";
 
@@ -39,12 +41,12 @@ class dizzbaseQuery
 
     async execQuery()
     {
-        res = await this.dizzbaseConnection.execSQL(this.fromClientPacket, this.sql);
-        if (res != null) {
-            if (res.rowCount >0) this.buildPkeyTable (res.rows);
-        }
+        await this.dizzbaseConnection.execSQL(this.fromClientPacket, {sql: this.sql, params: this.params}, (res) => {
+            if (res != null) {
+                if (res.rowCount >0) this.buildPkeyTable (res.rows);
+            }
+        });
     }
-
 
     resolveAlias (tablename, alias) {
         if (alias == undefined) return tablename;
@@ -74,13 +76,17 @@ class dizzbaseQuery
         let _aliasOrName = this.resolveAlias (mainTableJSON["name"], mainTableJSON["alias"]);
         this.mainTable = _aliasOrName;
         this.aliasToName[_aliasOrName] = mainTableJSON["name"];
-        this.from = '"'+mainTableJSON["name"]+'"' + " AS " + '"'+_aliasOrName+'"';
+        this.from = format.ident (mainTableJSON["name"])+ " AS " + format.ident(_aliasOrName)+" ";
         this.cols = this.getColumns (_aliasOrName, mainTableJSON["columns"], mainTableJSON["alias"]);
-        this.pkeyCols = '"'+_aliasOrName+'"."' + getPrimaryKey(mainTableJSON["name"]) + '" AS ' + dizzPkeyPrefix + mainTableJSON["name"] + ", ";
+        this.pkeyCols = format.ident(_aliasOrName)+'.' + format.ident(getPrimaryKey(mainTableJSON["name"])) + ' AS ' + format.ident(dizzPkeyPrefix + mainTableJSON["name"]) + ", ";
 
         // This is the short-cut call for loading just one record via primary key:
         if (mainTableJSON["pkey"] != 0)
-            this.where += '("'+_aliasOrName+'"' + '.' + '"'+getPrimaryKey(mainTableJSON["name"])+'"' + "=" + "'" + mainTableJSON["pkey"] +"'" + ") AND ";        
+        {
+            this.params.push (mainTableJSON["pkey"]);
+            if (this.where != "") this.where += " AND ";
+            this.where += '('+format.ident(_aliasOrName) + '.' + format.ident(getPrimaryKey(mainTableJSON["name"])) + " = $"  + (this.params.length) + " ) ";        
+        }
     }
 
     processJoinedTables (joinedTablesJSON)
@@ -95,11 +101,11 @@ class dizzbaseQuery
 
             let _aliasOrName = this.resolveAlias (jt["name"], jt["alias"]);
             this.cols += this.getColumns (_aliasOrName, jt["columns"], jt["alias"]);
-            this.pkeyCols += '"'+_aliasOrName+'"."' + getPrimaryKey(jt["name"]) + '" AS ' + dizzPkeyPrefix + _aliasOrName + ", ";
+            this.pkeyCols += format.ident(_aliasOrName) +'.' + format.ident(getPrimaryKey(jt["name"])) + ' AS ' + format.ident (dizzPkeyPrefix + _aliasOrName) + ", ";
 
             this.aliasToName[_aliasOrName] = jt["name"];
-            this.from += " JOIN "+ '"'+jt["name"]+'"' + " AS " + '"'+_aliasOrName+'"' + 
-                " ON " + '"'+_aliasOrName+'"' + "." + '"'+getPrimaryKey(jt["name"])+'"' + "=" + '"'+joinToTableOrAlias+'"' + "." + '"'+foreignKey+'"' + " ";
+            this.from += " JOIN "+ format.ident(jt["name"]) + " AS " + format.ident (_aliasOrName) + 
+                " ON " + format.ident(_aliasOrName) + "." + format.ident(getPrimaryKey(jt["name"])) + "=" + format.ident(joinToTableOrAlias) + "." + format.ident(foreignKey) + " ";
         });
     }
 
@@ -151,9 +157,10 @@ class dizzbaseQuery
         this.mainTable = "";
         this.from = "";
         this.sql = "";
+        this.params = [];
         this.cols = "";
         this.pkeyCols = "";
-        this.where = " WHERE ";
+        this.where = "";
         this.orderBy = " ORDER BY ";
         this.pkeyTable = {};
         this.fromClientPacket = _fromClientPacket;
@@ -164,19 +171,20 @@ class dizzbaseQuery
         this.processMainTable (j["table"]);
         this.processJoinedTables (j["joinedTables"]);
 
-        /* Creat WHERE CLAUSE  */
-        j["filters"].forEach (f => {            
-            this.where += '("'+f["table"]+'"' + '.' + '"'+f["column"]+'"' + f["comparison"] + " " + "'" + f["value"] +"'" + ") AND ";
-        });
-
-        if (this.where.indexOf ("AND") == -1) // nothing has been added to the where clause
-            this.where = "    "; // set to 4 blanks which will be removed below.
+        // Create WHERE CLAUSE 
+        // Note that processMainTable or processJoinedTables may already have added to the where clause, hence the +=
+        let where_filter = dizzbaseTransactions.buildWhereClause (j["filters"], this.params);
+        if (where_filter.trim() != "")
+        {
+             if (this.where != "") this.where += " AND ";
+             this.where += where_filter;
+        }
 
         /* Create ORDER BY CLAUSE  */
         if (j["sortFields"].length == 0) {this.orderBy = ""} else
         {
             j["sortFields"].forEach (o => {            
-                this.orderBy += '"'+o["table"]+'"' + '.' + '"'+o["column"]+'"' + " ";
+                this.orderBy += format.ident (o["table"]) + '.' + format.ident(o["column"]) + " ";
                 if (o["ascending"] == true)
                     this.orderBy += "ASC ";
                 else
@@ -185,10 +193,10 @@ class dizzbaseQuery
             });
         }
     
-        // To Do: Migrate to SQL Parameter Binding: https://node-postgres.com/features/queries
         this.sql = "SELECT " + this.cols +
             this.pkeyCols.substring (0, this.pkeyCols.length-2) + // remove trailing ", "
-            " FROM " + this.from + this.where.substring(0, this.where.length-4)  // remove trailing "AND "
+            " FROM " + this.from + 
+            " WHERE " + this.where
             + this.orderBy.substring(0, this.orderBy.length-2); // remove trailing ", "
     }
 

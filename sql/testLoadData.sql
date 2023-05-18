@@ -17,7 +17,7 @@ CREATE TABLE "order" (
     customer_id INTEGER NOT NULL,
     sales_rep_id INTEGER NOT NULL,
     services_rep_id INTEGER NOT NULL,
-    order_date TIMESTAMP,
+    order_time TIMESTAMP,
     order_status VARCHAR(50),
     order_revenue NUMERIC(10, 2) NOT NULL,
     CONSTRAINT fk_customer FOREIGN KEY (customer_id) REFERENCES customer (customer_id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -36,13 +36,13 @@ INSERT INTO customer (first_name, last_name, email) VALUES ('Tim', 'Tester', 'ti
 INSERT INTO customer (first_name, last_name, email) VALUES ('John', 'Doe', 'john@live.com');
 INSERT INTO customer (first_name, last_name, email) VALUES ('Jane', 'Smith', 'jane@gmail.com');
 
-INSERT INTO "order" (order_name, customer_id, sales_rep_id, services_rep_id, order_date, order_status, order_revenue)
+INSERT INTO "order" (order_name, customer_id, sales_rep_id, services_rep_id, order_time, order_status, order_revenue)
     VALUES ('food', 1, 1, 2, '2023-01-02', 'delivered', 120.00);
-INSERT INTO "order" (order_name, customer_id, sales_rep_id, services_rep_id, order_date, order_status, order_revenue)
+INSERT INTO "order" (order_name, customer_id, sales_rep_id, services_rep_id, order_time, order_status, order_revenue)
     VALUES ('hardware', 2, 2, 3, '2023-02-14', 'open', 25.99);
-INSERT INTO "order" (order_name, customer_id, sales_rep_id, services_rep_id, order_date, order_status, order_revenue)
+INSERT INTO "order" (order_name, customer_id, sales_rep_id, services_rep_id, order_time, order_status, order_revenue)
     VALUES ('shirts', 3, 1, 3, '2023-03-10', 'open', 35.25);
-INSERT INTO "order" (order_name, customer_id, sales_rep_id, services_rep_id, order_date, order_status, order_revenue)
+INSERT INTO "order" (order_name, customer_id, sales_rep_id, services_rep_id, order_time, order_status, order_revenue)
     VALUES ('fruit', 3, 1, 3, '2023-03-12', 'open', 110.25);
-INSERT INTO "order" (order_name, customer_id, sales_rep_id, services_rep_id, order_date, order_status, order_revenue)
+INSERT INTO "order" (order_name, customer_id, sales_rep_id, services_rep_id, order_time, order_status, order_revenue)
     VALUES ('drinks', 1, 2, 3, '2023-04-01', 'open', 115.15);

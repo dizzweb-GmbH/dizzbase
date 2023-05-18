@@ -1,48 +1,63 @@
 
 const { getPrimaryKey } = require("../dbTools/dbDictionary");
+const format = require ("pg-format");
 
 function dizzbaseUpateStatement(request) {
-    let sql = "UPDATE " + '"'+request['table']+'"' + " SET ";
+    let sql = "UPDATE " + format.ident(request['table']) + " SET ";
+    let params = [];
     for (let i = 0; i < request['fields'].length; i++) {
-        sql += '"'+request['fields'][i]+'"' + " = " + "'"+request['values'][i]+"'" + ", ";
+        sql += format.ident(request['fields'][i]) + " = " + "$"+(i+1) + ", "; // note the (i+1) as parameters are starting at $1
+        params.push (request['values'][i]);
     }
 
     sql = sql.substring (0, sql.length-2);
-    sql += buildWhereClause (request['filters']);
-    return sql;
+    sql +=  " WHERE " + buildWhereClause (request['filters'], params);
+
+    return {sql: sql, params: params};
 }
 
 function dizzbaseInsertStatement(request) {
-    let sql = "INSERT INTO " + '"'+request['table']+'"' + " ( ";
+    let sql = "INSERT INTO " + format.ident(request['table']) + " ( ";
+    let params = [];
     for (let i = 0; i < request['fields'].length; i++) {
-        sql += '"'+request['fields'][i]+'"' + ", ";
+        sql += format.ident (request['fields'][i]) + ", ";
     }
     sql = sql.substring(0, sql.length-2) + ") VALUES ( ";
     for (let i = 0; i < request['fields'].length; i++) {
-        sql += "'"+request['values'][i]+"'" + ", ";
+        sql += "$" + (i+1) + ", ";   // note the (i+1) as parameters are starting at $1
+        params.push (request['values'][i]);
     }
     // We return the primary as two columns to allow "generic" retrieval in case with don't know the name of the column.
-    sql = sql.substring(0, sql.length-2) + " ) RETURNING " + getPrimaryKey(request['table']) + ", " + getPrimaryKey(request['table']) + " AS pkey ";    
-    return sql;
+    sql = sql.substring(0, sql.length-2) + " ) RETURNING " + format.ident (getPrimaryKey(request['table'])) + ", " + format.ident (getPrimaryKey(request['table'])) + " AS pkey ";
+
+    return {sql: sql, params: params};
 }
 
 function dizzbaseDeleteStatement(request) {
-    let sql = "DELETE FROM " + '"'+request['table']+'" ';
-    sql += buildWhereClause (request['filters']);
+    let sql = "DELETE FROM " + format.ident(request['table']) +' ';
+    let params = [];
+    sql += " WHERE " + buildWhereClause (request['filters'], params);
 
-    return sql;
+    return {sql: sql, params: params};
 }
 
-function buildWhereClause(filters) {
-    let where = " WHERE ";
-    filters.forEach (f => {            
-        where += '("'+f["table"]+'"' + '.' + '"'+f["column"]+'"' + f["comparison"] + " " + "'" + f["value"] +"'" + ") AND ";
+function buildWhereClause(filters, params) {
+    let where = "";
+    let i = params.length;
+
+    filters.forEach (f => {
+        let c = f["comparison"].trim().toUpperCase();
+        // Check for allowed comparisons to secure against SQL injection
+        // Currently unsupported SQL Comparisons: BETWEEN, IN
+        if (!((c=="=") || (c==">") || (c=="<") || (c==">=") || (c=="<=") || (c=="LIKE") || (c=="!=") || (c=="<>"))) throw "Illegal comparison operator in filter: "+f["comparison"];
+
+        i++;
+        if (where != "") where += " AND ";
+        where += '('+format.ident(f["table"])+ '.' + format.ident(f["column"])+' ' + c + ' $' + i + ")";
+        params.push (f["value"]);
     });
 
-    if (where.indexOf ("AND") == -1) // nothing has been added to the where clause
-        where = "    "; // set to 4 blanks which will be removed below.
-
-    return where.substring(0, where.length-4); // remove trailing AND or blanks
+    return where;
 }
 
-module.exports = { dizzbaseUpateStatement, dizzbaseInsertStatement, dizzbaseDeleteStatement };
+module.exports = { dizzbaseUpateStatement, dizzbaseInsertStatement, dizzbaseDeleteStatement, buildWhereClause };

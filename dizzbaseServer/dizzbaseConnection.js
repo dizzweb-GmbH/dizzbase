@@ -24,59 +24,75 @@ class dizzbaseConnection
 
     async  dbRequestEvent(fromClientPacket) {
         var res;    
-
-        if (fromClientPacket.dizzbaseRequestType == 'dizzbasequery')
-        {
-            let q = this.queries[fromClientPacket.transactionuuid];
-            if (q == null)
+        try {
+            if (fromClientPacket.dizzbaseRequestType == 'dizzbasequery')
             {
-                q = new dizzbaseQuery.dizzbaseQuery (fromClientPacket, this);
-                this.queries[fromClientPacket.transactionuuid]=q;
+                let q = this.queries[fromClientPacket.transactionuuid];
+                if (q == null)
+                {
+                    q = new dizzbaseQuery.dizzbaseQuery (fromClientPacket, this);
+                    this.queries[fromClientPacket.transactionuuid]=q;
+                }
+                q.execQuery();
+            } else {
+                let sqlWithParams = {};
+                switch (fromClientPacket.dizzbaseRequestType) {
+                    case 'dizzbaseupdate':
+                        sqlWithParams = dizzbaseTransactions.dizzbaseUpateStatement (fromClientPacket['dizzbaseRequest']);
+                        break;
+                    case 'dizzbaseinsert':
+                        sqlWithParams = dizzbaseTransactions.dizzbaseInsertStatement (fromClientPacket['dizzbaseRequest']);
+                        break;
+                    case 'dizzbasedelete':
+                        sqlWithParams = dizzbaseTransactions.dizzbaseDeleteStatement (fromClientPacket['dizzbaseRequest']);
+                        break;
+                    case 'dizzbasedirectsql':
+                        if (process.env.DIZZBASE_DIRECT_SQL_ENABLED != "1") throw 'DizzbaseDirectSQL request received, but this API is disabled for security reasons by default. Add DIZZBASE_DIRECT_SQL_ENABLED=1 if you want to use the API at the risk of SQL injection attacks.';
+                        sqlWithParams = {sql: fromClientPacket['dizzbaseRequest']["sql"], params: null};
+                        break;
+                    default:
+                        console.error (`Invalid dizzbaseRequestType: ${fromClientPacket.dizzbaseRequestType}`);
+                }
+                try {
+                    await this.execSQL(fromClientPacket, sqlWithParams, null);
+                } catch (error) {
+                    console.log ("ERROR in dizzbaseConnection while executing SQL for transaction: " + error.toString());
+                    throw "ERROR in dizzbaseConnection while executing SQL for transaction: " + error.toString();
+                }
             }
-            q.execQuery();
-        } else {
-            let sql = "";
-            switch (fromClientPacket.dizzbaseRequestType) {
-                case 'dizzbaseupdate':
-                    sql = dizzbaseTransactions.dizzbaseUpateStatement (fromClientPacket['dizzbaseRequest']);
-                    break;
-                case 'dizzbaseinsert':
-                    sql = dizzbaseTransactions.dizzbaseInsertStatement (fromClientPacket['dizzbaseRequest']);
-                    break;
-                case 'dizzbasedelete':
-                    sql = dizzbaseTransactions.dizzbaseDeleteStatement (fromClientPacket['dizzbaseRequest']);
-                    break;
-                case 'dizzbasedirectsql':
-                    sql = fromClientPacket['dizzbaseRequest']["sql"];
-                    break;
-                default:
-                    console.error (`Invalid dizzbaseRequestType: ${fromClientPacket.dizzbaseRequestType}`);
-            }
-            try {
-                res = await this.execSQL(fromClientPacket, sql);
-            } catch (error) {
-                console.log ("ERROR in dizzbaseConnection while executing SQL for transaction: " + error.toString());
-            }
+        } catch (error) {
+            console.error (error);
+            var dizzbaseFromServerPacket = {};
+            this.buildToServerPacket (dizzbaseFromServerPacket, fromClientPacket, "dizzbase error: "+ error.toString(), 0);
+            this.socket.emit ('dbrequest_response', dizzbaseFromServerPacket);                    
         }
     }
    
-    async execSQL (fromClientPacket, sql)
+    async execSQL (fromClientPacket, sqlWithParams, postDBExecCallback)
     {
-        var dizzbaseFromServerPacket = {};
-        try {
-            res = await dbTools.getConnectionPool().query(sql);
-        } catch (error) {
-            this.buildToServerPacket (dizzbaseFromServerPacket, fromClientPacket, error, 0);
+        try
+        {
+            var dizzbaseFromServerPacket = {};
+            try {
+                res = await dbTools.getConnectionPool().query(sqlWithParams.sql, sqlWithParams.params);
+            } catch (error) {
+                console.error (error);
+                this.buildToServerPacket (dizzbaseFromServerPacket, fromClientPacket, error, 0);
+                this.socket.emit ('dbrequest_response', dizzbaseFromServerPacket);
+                return res;
+            }
+            if (postDBExecCallback != null) postDBExecCallback(res);
+            this.buildToServerPacket (dizzbaseFromServerPacket, fromClientPacket, '', res.rowCount);
+
+            dizzbaseFromServerPacket['data'] = res.rows;
+
+            //console.log ("EMITTING: Conn: " + this.nickName +" Transaction: " + fromClientPacket.dizzbaseRequest.nickName);
             this.socket.emit ('dbrequest_response', dizzbaseFromServerPacket);
-            return res;
-        }
-        this.buildToServerPacket (dizzbaseFromServerPacket, fromClientPacket, '', res.rowCount);
-
-        dizzbaseFromServerPacket['data'] = res.rows;
-
-        //console.log ("EMITTING: Conn: " + this.nickName +" Transaction: " + fromClientPacket.dizzbaseRequest.nickName);
-        this.socket.emit ('dbrequest_response', dizzbaseFromServerPacket);    
-        return res;                   
+        } catch (error)
+        {
+            console.error ("Error in execSQL: ");
+            console.error (error);
+        }    
     }
 
     buildToServerPacket (dizzbaseFromServerPacket, fromClientPacket, error, rowCount)

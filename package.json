@@ -1,6 +1,6 @@
 {
   "name": "dizzbase",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Realtime postgreSQL tool for node js.",
   "keywords": [
     "realtime",
@@ -31,6 +31,7 @@
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.0",
+    "pg-format": "^1.0.4",
     "pg-logical-replication": "^2.0.3",
     "socket.io": "^4.6.1"
   }
