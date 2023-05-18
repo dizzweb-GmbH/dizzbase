@@ -192,11 +192,13 @@ class dizzbaseQuery
                 this.orderBy += ", "
             });
         }
+
+        if (this.where.trim() != "") this.where = " WHERE " + this.where;
     
         this.sql = "SELECT " + this.cols +
             this.pkeyCols.substring (0, this.pkeyCols.length-2) + // remove trailing ", "
             " FROM " + this.from + 
-            " WHERE " + this.where
+            this.where
             + this.orderBy.substring(0, this.orderBy.length-2); // remove trailing ", "
     }
 

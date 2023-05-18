@@ -36,6 +36,8 @@ function getLinkedTables (t)
 }
 
 function getPrimaryKey (tableName) {
+    let res = pKeys[tableName];
+    if (res == null) throw ("dizzbase Error in getPrimaryKey: Cannot find primary key for table, either the table does not exist or no primary key is defined- table: " + tableName);
     return pKeys[tableName];
 }
 
@@ -53,6 +55,7 @@ function getForeignKey (tableName, joinedTableName) {
         return true;
     });
 
+    if (res == "") throw ("dizzbase Error in getForeignKey: Cannot find foreign key for table - constraint may not exist - table: " + tableName + " / joined table: "+joinedTableName);
     return res;
 }
 
