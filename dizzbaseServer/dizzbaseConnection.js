@@ -63,8 +63,8 @@ class dizzbaseConnection
         } catch (error) {
             console.error (error);
             var dizzbaseFromServerPacket = {};
-            this.buildToServerPacket (dizzbaseFromServerPacket, fromClientPacket, "dizzbase error: "+ error.toString(), 0);
-            this.socket.emit ('dbrequest_response', dizzbaseFromServerPacket);                    
+            this.buildFromServerPacket (dizzbaseFromServerPacket, fromClientPacket, "dizzbase error: "+ error.toString(), 0);
+            this.socket.emit ('dbrequest_response', dizzbaseFromServerPacket);
         }
     }
    
@@ -77,12 +77,12 @@ class dizzbaseConnection
                 res = await dbTools.getConnectionPool().query(sqlWithParams.sql, sqlWithParams.params);
             } catch (error) {
                 console.error (error);
-                this.buildToServerPacket (dizzbaseFromServerPacket, fromClientPacket, error, 0);
+                this.buildFromServerPacket (dizzbaseFromServerPacket, fromClientPacket, error, 0);
                 this.socket.emit ('dbrequest_response', dizzbaseFromServerPacket);
                 return res;
             }
             if (postDBExecCallback != null) postDBExecCallback(res);
-            this.buildToServerPacket (dizzbaseFromServerPacket, fromClientPacket, '', res.rowCount);
+            this.buildFromServerPacket (dizzbaseFromServerPacket, fromClientPacket, '', res.rowCount);
 
             dizzbaseFromServerPacket['data'] = res.rows;
 
@@ -95,7 +95,7 @@ class dizzbaseConnection
         }    
     }
 
-    buildToServerPacket (dizzbaseFromServerPacket, fromClientPacket, error, rowCount)
+    buildFromServerPacket (dizzbaseFromServerPacket, fromClientPacket, error, rowCount)
     {
         dizzbaseFromServerPacket['uuid'] = this.uuid;
         dizzbaseFromServerPacket['dizzbaseRequestType'] = fromClientPacket["dizzbaseRequestType"];

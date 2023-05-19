@@ -57,6 +57,13 @@ To enable authentication, set your JWT secret in the .env file:
    JWT_SECRET=your-jwt-secret-do-not-share
    ```
 
+There is a script to create an API access token for your client - it allows the client to access dizzbase for login in, but does not allow retrieving data, etc. This can only be done after a login with user credentials. To create the API token, first add your JWT secret to your .env file and then (from the folder that contains .env) run the script like so:
+```
+   node node_modules/dizzbase/createAPIAccessToken.js
+```
+
+The script ```createArgon2Hash.js```creates password hashes that can be store in the ```dizzbase_user``` table.
+
 ## SQL injection protection and backend access to the database.
 
 All API calls are SQL-injection protected - with the exception of ```DizzbaseDirectSQL()```. Therefore, this API is disabled by default. To enable it (for eg. debugging) add to your .env file:
