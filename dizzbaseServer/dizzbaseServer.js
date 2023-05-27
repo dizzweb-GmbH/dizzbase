@@ -21,7 +21,7 @@ function getConnection(socketuuid, fromClientPacket, socket)
 
 async function initDizzbaseExpressServer(server) {
     await dbTools.InitDB();
-    console.log ("Database connection initialized.")
+    console.log ("Database connection initialized.");
     dbListener.initDBListener();
 
     const io = new Server(server, {
@@ -40,7 +40,6 @@ async function initDizzbaseExpressServer(server) {
 
         socket.on ('dizzbase_socket_init', (req) => {
             let _socketuuid = req["socketuuid"];
-            let _uuid = req["data"];
             sockets[_socketuuid] = {connections: [], logins: []};
             socketUuid = _socketuuid;
         })
@@ -49,11 +48,39 @@ async function initDizzbaseExpressServer(server) {
             let _socketuuid = req["socketuuid"];
             let _uuid = req["data"];
 
-            sockets[_socketuuid]['connections'][_uuid].dispose();
-            delete sockets[_socketuuid]['connections'][_uuid];
+            //console.log ("XXX CLOSING Connection: "+_uuid + " Socket="+_socketuuid);
+            try {
+                sockets[_socketuuid]['connections'][_uuid].dispose();
+                delete sockets[_socketuuid]['connections'][_uuid];
+            } catch (error) {
+                // probably connection not found - this happens if the client create a new socketuuid for an existing socket - typically on flutter hot reload
+                // so we look through all sockets to finde the connection and close it:
+                try {
+                    var foundSocketuuid = "";
+                    for (var prop in sockets) {
+                        if (Object.prototype.hasOwnProperty.call(sockets, prop)) {
+                            let connections = sockets[prop]['connections'];
+                            for (var prop_c in connections) {
+                                if (Object.prototype.hasOwnProperty.call(connections, prop_c)) {
+                                    if (prop_c == _uuid) foundSocketuuid = prop;
+                                }
+                            }
+                        }
+                    }
+                    if (foundSocketuuid != "")
+                    {
+                        sockets[foundSocketuuid]['connections'][_uuid].dispose();
+                        delete sockets[foundSocketuuid]['connections'][_uuid];
+                        console.log ("WARNING: Closing connection "+_uuid+" that was not associated with current socket.");
+                    }
+                } catch (error) {
+                    console.error ("Error while trying to close connection: " + error);  
+                }
+            }
         });
     
         socket.on('dbrequest', (req) => {
+            //console.log("XXX SOCK in: "+socketUuid+ " ");
             if (process.env.JWT_SECRET != null) 
             {
                 var decoded;
@@ -102,17 +129,17 @@ async function initDizzbaseExpressServer(server) {
                     try {delete sockets[_socketuuid]['logins'][authReq.uuid];} catch (error) {console.error ("socket.on('dizzbase_auth_request' - error deleting login: "+error)}                        
                 }
             }
-        });
+        });5
     
         socket.on('disconnect', async (reason) => {
             console.log ("Client disconnect - "+reason);
             for (var prop in sockets[socketUuid]['connections']) {
                 if (Object.prototype.hasOwnProperty.call(sockets[socketUuid]['connections'], prop)) {
-                    sockets[socketUuid]['connections'][prop].dispose();
-                    delete sockets[socketUuid]['connections'][prop];
+                    try {sockets[socketUuid]['connections'][prop].dispose();} catch (error) {console.log ("WARNING: Error on disposing connection: "+error) }
+                    try {delete sockets[socketUuid]['connections'][prop];} catch (error) {console.log ("WARNING: Error on deleting connection: "+error)}
                 }
             }            
-            delete sockets[socketUuid];
+            try {delete sockets[socketUuid];} catch (error) {console.log ("WARNING: Error on deleting socket from array: "+error)}
         });
     });
 }

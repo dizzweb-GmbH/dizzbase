@@ -35,6 +35,7 @@ class dizzbaseQuery
         });
         if (dirty)
         {
+            //console.log ("XXX dbNotify Executing Query: Conn: " + this.fromClientPacket.nickName + " ("+this.fromClientPacket.uuid+" ) Req: "+this.fromClientPacket.dizzbaseRequest.nickName+ " ("+this.fromClientPacket.dizzbaseRequest.transactionuuid+") ");
             this.execQuery();
         }
     }
@@ -104,7 +105,10 @@ class dizzbaseQuery
             this.pkeyCols += format.ident(_aliasOrName) +'.' + format.ident(getPrimaryKey(jt["name"])) + ' AS ' + format.ident (dizzPkeyPrefix + _aliasOrName) + ", ";
 
             this.aliasToName[_aliasOrName] = jt["name"];
-            this.from += " JOIN "+ format.ident(jt["name"]) + " AS " + format.ident (_aliasOrName) + 
+            var joinClause = " JOIN ";
+            if (jt.joinType == "rightOuter") joinClause = " RIGHT OUTER " + joinClause;
+            if (jt.joinType == "leftOuter") joinClause = " LEFT OUTER " + joinClause;
+            this.from += joinClause+ format.ident(jt["name"]) + " AS " + format.ident (_aliasOrName) + 
                 " ON " + format.ident(_aliasOrName) + "." + format.ident(getPrimaryKey(jt["name"])) + "=" + format.ident(joinToTableOrAlias) + "." + format.ident(foreignKey) + " ";
         });
     }

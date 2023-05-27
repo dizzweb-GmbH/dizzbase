@@ -26,7 +26,7 @@ async function InitDB (params) {
         }
     );
     
-    await dbDictionary.InitDBDictionary(pool);
+    await dbDictionary.InitDBDictionary(poolAdmin);
     await dbDizzbaseAdmin.initDizzbaseAdmin (poolAdmin);
 }
 

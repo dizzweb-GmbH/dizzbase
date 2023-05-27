@@ -23,6 +23,7 @@ class dizzbaseConnection
     }
 
     async  dbRequestEvent(fromClientPacket) {
+        //console.log ("XXX RECEIVING: Conn: " + this.nickName + " ("+this.uuid+") Req: " + fromClientPacket.dizzbaseRequest.nickName + " (" + fromClientPacket.dizzbaseRequest.transactionuuid+")");
         var res;    
         try {
             if (fromClientPacket.dizzbaseRequestType == 'dizzbasequery')
@@ -84,9 +85,9 @@ class dizzbaseConnection
             if (postDBExecCallback != null) postDBExecCallback(res);
             this.buildFromServerPacket (dizzbaseFromServerPacket, fromClientPacket, '', res.rowCount);
 
+            //console.log ("XXX SENDING1: Conn: " + this.nickName + " ("+this.uuid+") Req: " + fromClientPacket.dizzbaseRequest.nickName + " (" + fromClientPacket.dizzbaseRequest.transactionuuid+")");
             dizzbaseFromServerPacket['data'] = res.rows;
 
-            //console.log ("EMITTING: Conn: " + this.nickName +" Transaction: " + fromClientPacket.dizzbaseRequest.nickName);
             this.socket.emit ('dbrequest_response', dizzbaseFromServerPacket);
         } catch (error)
         {
@@ -164,6 +165,7 @@ function notifyConnection(pkList)
             for (var prop_q in queries) {
                 if (Object.prototype.hasOwnProperty.call(queries, prop_q)) {
                     queries[prop_q].dbNotify (pkList);
+                    //console.log ("XXX Notify: " + prop);
                 }
             }
         }
